@@ -5,14 +5,15 @@ import { cors } from 'hono/cors';
 
 const app = new Hono();
 
-app.use('*', cors({
-  origin: [
-    'https://leave.thecorvusstudio.com',
-    'http://localhost:5173'
-  ],
-  allowMethods: ['GET', 'POST', 'OPTIONS'],
-  allowHeaders: ['Content-Type', 'Authorization'],
-}));
+app.use(
+  '/api/*',
+  cors({
+    origin: 'https://leave.thecorvusstudio.com',
+    allowMethods: ['GET', 'POST', 'OPTIONS'],
+    allowHeaders: ['Content-Type', 'Authorization'],
+    credentials: true,
+  })
+);
 
 app.get('/', (c) => {
   return c.json({
