@@ -1,0 +1,48 @@
+# Dependencies
+node_modules/
+
+
+
+# Logs
+logs
+*.log
+npm-debug.log*
+
+# Runtime files
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage
+coverage/
+
+# Build folders
+dist/
+build/
+
+# Mac files
+.DS_Store
+
+# SQLite
+*.sqlite
+*.sqlite3
+
+# VSCode
+.vscode/
+
+# IntelliJ
+.idea/
+
+# Temporary
+tmp/
+temp/
+
+# Render
+.render
+
+# Uploads
+uploads/
+
+# Cache
+.cache/
