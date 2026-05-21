@@ -1,0 +1,8 @@
+name = "corvus-leave-system"
+main = "worker.js"
+compatibility_date = "2026-05-21"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "corvus_leave_db"
+database_id = "ca30d1a4-044c-41d4-903e-b41749d4d94d"

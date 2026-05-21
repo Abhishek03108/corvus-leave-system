@@ -1,0 +1,7 @@
+node_modules
+.wrangler
+.env
+.dev.vars
+database.sqlite
+mock_emails.log
+*.log
