@@ -809,7 +809,7 @@ app.on('POST', ['/api/v1/auth/verify-otp', '/auth/verify-otp'], async (c) => {
   await c.env.DB.prepare(`DELETE FROM otp_codes WHERE email = ?`).bind(email).run();
 
   const user = await c.env.DB.prepare(
-    `SELECT id, full_name, work_email, role, designation, department, employee_type, joining_date
+    `SELECT id, full_name, work_email, role, designation, department, employee_type, joining_date, dob
      FROM users WHERE work_email = ? LIMIT 1`
   ).bind(email).first();
 
@@ -840,6 +840,7 @@ app.on('POST', ['/api/v1/auth/verify-otp', '/auth/verify-otp'], async (c) => {
       department: user.department,
       employeeType: user.employee_type,
       joiningDate: user.joining_date,
+      dob: user.dob,
     },
   });
 });
