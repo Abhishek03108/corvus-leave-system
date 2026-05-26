@@ -104,13 +104,9 @@ async function sleep(ms) {
       throw new Error('No OTP hash found in database');
     }
 
-    console.log('\nStep 3: Finding plaintext OTP from hash...');
-    const decryptedOtp = await bruteForceOtp(storedHash);
+    console.log('\nStep 3: Using stored OTP directly...');
+    const decryptedOtp = storedHash;
     console.log('Decrypted OTP:', decryptedOtp);
-
-    if (!decryptedOtp) {
-      throw new Error('Could not decrypt OTP');
-    }
 
     console.log('\nStep 4: Calling verify-otp endpoint...');
     const verifyResponse = await fetch('http://localhost:8787/api/v1/auth/verify-otp', {

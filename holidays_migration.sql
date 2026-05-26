@@ -1,0 +1,57 @@
+CREATE TABLE IF NOT EXISTS holiday_rules (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL UNIQUE,
+  type TEXT NOT NULL,
+  fixed_month INTEGER,
+  fixed_day INTEGER,
+  seeded_date_2026 TEXT,
+  is_active INTEGER DEFAULT 1
+);
+
+CREATE TABLE IF NOT EXISTS holidays (
+  id TEXT PRIMARY KEY,
+  rule_id TEXT NOT NULL,
+  holiday_date TEXT NOT NULL UNIQUE,
+  name TEXT NOT NULL
+);
+
+-- Seed Holiday Rules & Holidays (for 2026)
+INSERT OR IGNORE INTO holiday_rules (id, name, type, fixed_month, fixed_day, seeded_date_2026) VALUES
+('a1111111-1111-1111-1111-111111111111', 'New Year', 'fixed', 1, 1, NULL),
+('a2222222-2222-2222-2222-222222222222', 'Sankranti', 'variable', NULL, NULL, '2026-01-14'),
+('a3333333-3333-3333-3333-333333333333', 'Republic Day', 'fixed', 1, 26, NULL),
+('a4444444-4444-4444-4444-444444444444', 'Maha Shivaratri', 'variable', NULL, NULL, '2026-02-15'),
+('a5555555-5555-5555-5555-555555555555', 'Holi', 'variable', NULL, NULL, '2026-03-04'),
+('a6666666-6666-6666-6666-666666666666', 'Ugadi', 'variable', NULL, NULL, '2026-03-20'),
+('a7777777-7777-7777-7777-777777777777', 'Ram Navami', 'variable', NULL, NULL, '2026-03-28'),
+('a8888888-8888-8888-8888-888888888888', 'Ambedkar Jayanthi', 'fixed', 4, 14, NULL),
+('a9999999-9999-9999-9999-999999999999', 'May Day', 'fixed', 5, 1, NULL),
+('b1111111-1111-1111-1111-111111111111', 'Independence Day', 'fixed', 8, 15, NULL),
+('b2222222-2222-2222-2222-222222222222', 'Raksha Bandhan', 'variable', NULL, NULL, '2026-08-28'),
+('b3333333-3333-3333-3333-333333333333', 'Onam', 'variable', NULL, NULL, '2026-08-26'),
+('b4444444-4444-4444-4444-444444444444', 'Ganesh Chaturthi', 'variable', NULL, NULL, '2026-09-14'),
+('b5555555-5555-5555-5555-555555555555', 'Gandhi Jayanti', 'fixed', 10, 2, NULL),
+('b6666666-6666-6666-6666-666666666666', 'Dussehra', 'variable', NULL, NULL, '2026-10-19'),
+('b7777777-7777-7777-7777-777777777777', 'Diwali', 'variable', NULL, NULL, '2026-11-08'),
+('b8888888-8888-8888-8888-888888888888', 'Chhath Puja', 'variable', NULL, NULL, '2026-11-14'),
+('b9999999-9999-9999-9999-999999999999', 'Christmas', 'fixed', 12, 25, NULL);
+
+INSERT OR IGNORE INTO holidays (id, rule_id, holiday_date, name) VALUES
+('h1', 'a1111111-1111-1111-1111-111111111111', '2026-01-01', 'New Year'),
+('h2', 'a2222222-2222-2222-2222-222222222222', '2026-01-14', 'Sankranti'),
+('h3', 'a3333333-3333-3333-3333-333333333333', '2026-01-26', 'Republic Day'),
+('h4', 'a4444444-4444-4444-4444-444444444444', '2026-02-15', 'Maha Shivaratri'),
+('h5', 'a5555555-5555-5555-5555-555555555555', '2026-03-04', 'Holi'),
+('h6', 'a6666666-6666-6666-6666-666666666666', '2026-03-20', 'Ugadi'),
+('h7', 'a7777777-7777-7777-7777-777777777777', '2026-03-28', 'Ram Navami'),
+('h8', 'a8888888-8888-8888-8888-888888888888', '2026-04-14', 'Ambedkar Jayanthi'),
+('h9', 'a9999999-9999-9999-9999-999999999999', '2026-05-01', 'May Day'),
+('h10', 'b1111111-1111-1111-1111-111111111111', '2026-08-15', 'Independence Day'),
+('h11', 'b2222222-2222-2222-2222-222222222222', '2026-08-28', 'Raksha Bandhan'),
+('h12', 'b3333333-3333-3333-3333-333333333333', '2026-08-26', 'Onam'),
+('h13', 'b4444444-4444-4444-4444-444444444444', '2026-09-14', 'Ganesh Chaturthi'),
+('h14', 'b5555555-5555-5555-5555-555555555555', '2026-10-02', 'Gandhi Jayanti'),
+('h15', 'b6666666-6666-6666-6666-666666666666', '2026-10-19', 'Dussehra'),
+('h16', 'b7777777-7777-7777-7777-777777777777', '2026-11-08', 'Diwali'),
+('h17', 'b8888888-8888-8888-8888-888888888888', '2026-11-14', 'Chhath Puja'),
+('h18', 'b9999999-9999-9999-9999-999999999999', '2026-12-25', 'Christmas');
