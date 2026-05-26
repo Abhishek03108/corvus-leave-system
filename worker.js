@@ -854,7 +854,7 @@ app.on('POST', ['/api/v1/auth/logout', '/auth/logout'], auth, async (c) => {
 app.on('GET', ['/api/v1/auth/me', '/auth/me'], auth, async (c) => {
   const jwtUser = c.get('user');
   const user = await c.env.DB.prepare(
-    `SELECT id, full_name, work_email, role, designation, department, employee_type, joining_date, contact_number
+    `SELECT id, full_name, work_email, role, designation, department, employee_type, joining_date, dob, contact_number
      FROM users WHERE id = ? LIMIT 1`
   ).bind(jwtUser.userId).first();
 
@@ -871,6 +871,7 @@ app.on('GET', ['/api/v1/auth/me', '/auth/me'], auth, async (c) => {
       department: user.department,
       employeeType: user.employee_type,
       joiningDate: user.joining_date,
+      dob: user.dob,
       contactNumber: user.contact_number,
     },
   });
@@ -881,7 +882,7 @@ app.on('GET', ['/api/v1/auth/me', '/auth/me'], auth, async (c) => {
 app.on('GET', ['/api/v1/user/profile', '/user/profile'], auth, async (c) => {
   const jwtUser = c.get('user');
   const user = await c.env.DB.prepare(
-    `SELECT id, full_name, work_email, role, designation, department, employee_type, joining_date, contact_number, profile_image
+    `SELECT id, full_name, work_email, role, designation, department, employee_type, joining_date, dob, contact_number, profile_image
      FROM users WHERE id = ? LIMIT 1`
   ).bind(jwtUser.userId).first();
 
@@ -898,6 +899,7 @@ app.on('GET', ['/api/v1/user/profile', '/user/profile'], auth, async (c) => {
       department: user.department,
       employeeType: user.employee_type,
       joiningDate: user.joining_date,
+      dob: user.dob,
       contactNumber: user.contact_number,
       profileImage: user.profile_image,
     },
@@ -919,7 +921,7 @@ app.on('PATCH', ['/api/v1/user/profile', '/user/profile'], auth, async (c) => {
 
 app.on('GET', ['/api/v1/user/list', '/user/list'], auth, async (c) => {
   const usersResult = await c.env.DB.prepare(
-    `SELECT id, full_name, work_email, role, status, designation, department, employee_type, joining_date, contact_number
+    `SELECT id, full_name, work_email, role, status, designation, department, employee_type, joining_date, dob, contact_number
      FROM users WHERE status = 'active' ORDER BY full_name ASC`
   ).all();
 
@@ -953,6 +955,7 @@ app.on('GET', ['/api/v1/user/list', '/user/list'], auth, async (c) => {
       department: u.department,
       employeeType: u.employee_type,
       joiningDate: u.joining_date,
+      dob: u.dob,
       contactNumber: u.contact_number,
       leaveBalances: balancesByUser[u.id] || [],
     })),
