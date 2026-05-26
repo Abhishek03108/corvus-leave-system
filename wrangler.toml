@@ -8,4 +8,4 @@ database_name = "corvus_leave_db"
 database_id = "ca30d1a4-044c-41d4-903e-b41749d4d94d"
 
 [triggers]
-crons = ["0 9 * * *"]
+crons = ["0 9 * * *", "30 18 * * *"]

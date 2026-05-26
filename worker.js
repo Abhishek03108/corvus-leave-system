@@ -31,18 +31,22 @@ const OTP_TTL_MS = 5 * 60 * 1000;
 
 const SICK_UUID = "22222222-2222-2222-2222-222222222222";
 const CASUAL_UUID = "33333333-3333-3333-3333-333333333333";
+const EMERGENCY_UUID = "44444444-4444-4444-4444-444444444444";
 
 function mapDbToFrontendLeaveTypeId(dbId) {
   if (dbId === 1 || String(dbId) === '1') return SICK_UUID;
   if (dbId === 2 || String(dbId) === '2') return CASUAL_UUID;
+  if (dbId === 3 || String(dbId) === '3') return EMERGENCY_UUID;
   return dbId;
 }
 
 function mapFrontendToDbLeaveTypeId(frontendId) {
   if (frontendId === SICK_UUID) return 1;
   if (frontendId === CASUAL_UUID) return 2;
+  if (frontendId === EMERGENCY_UUID) return 3;
   if (frontendId === 1 || frontendId === '1') return 1;
   if (frontendId === 2 || frontendId === '2') return 2;
+  if (frontendId === 3 || frontendId === '3') return 3;
   return frontendId;
 }
 
@@ -608,6 +612,83 @@ async function handleScheduledReminders(env) {
         `).bind(req.employee_id, String(req.id)).run();
       }
     }
+
+    // 4. Birthday Reminders (Today in IST)
+    // The cron will run at 18:30 UTC which is exactly 12:00 AM IST.
+    // We check for users whose DOB month/day matches current IST date.
+    
+    // Get current date in IST
+    const istDate = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
+    const istMonth = String(istDate.getMonth() + 1).padStart(2, '0');
+    const istDay = String(istDate.getDate()).padStart(2, '0');
+    const istMonthDay = `-${istMonth}-${istDay}`; // e.g. '-09-24'
+    const todayStr = istDate.toISOString().split('T')[0];
+
+    const birthdayUsers = await env.DB.prepare(`
+      SELECT id, full_name, work_email, profile_image
+      FROM users 
+      WHERE status = 'active' AND dob LIKE ?
+    `).bind(`%${istMonthDay}`).all();
+
+    if (birthdayUsers && birthdayUsers.results && birthdayUsers.results.length > 0) {
+      // Get templates
+      const templates = await env.DB.prepare(`SELECT id, subject, html_body FROM email_templates`).all();
+      const wishTpl = templates.results.find(t => t.id === 'birthday_wish');
+      const notifTpl = templates.results.find(t => t.id === 'birthday_notification');
+
+      const allActiveUsers = await env.DB.prepare(`SELECT id, work_email FROM users WHERE status = 'active'`).all();
+
+      for (const emp of birthdayUsers.results) {
+        if (!emp.work_email) continue;
+        
+        // Check if we already sent the wish today
+        const alreadySent = await env.DB.prepare(`
+          SELECT 1 FROM audit_logs WHERE action = 'BIRTHDAY_WISH_SENT' AND target_user_id = ? AND date(created_at) = date('now')
+        `).bind(emp.id).first();
+
+        if (!alreadySent) {
+          console.log(`Sending birthday wish to ${emp.work_email}`);
+          
+          let wishHtml = wishTpl ? wishTpl.html_body : 'Happy Birthday!';
+          wishHtml = wishHtml.replaceAll('{{name}}', emp.full_name);
+          let wishSubject = wishTpl ? wishTpl.subject : 'Happy Birthday!';
+          wishSubject = wishSubject.replaceAll('{{name}}', emp.full_name);
+
+          await sendNotificationEmail(env.RESEND_API_KEY, {
+            to: emp.work_email,
+            subject: wishSubject,
+            html: wishHtml
+          });
+
+          await env.DB.prepare(`
+            INSERT INTO audit_logs (action, performed_by, target_user_id, details, created_at) 
+            VALUES ('BIRTHDAY_WISH_SENT', NULL, ?, 'Sent birthday wish email', CURRENT_TIMESTAMP)
+          `).bind(emp.id).run();
+
+          // Send notifications to colleagues
+          let notifHtml = notifTpl ? notifTpl.html_body : 'Today is their birthday!';
+          notifHtml = notifHtml.replaceAll('{{name}}', emp.full_name);
+          let notifSubject = notifTpl ? notifTpl.subject : 'Birthday Today!';
+          notifSubject = notifSubject.replaceAll('{{name}}', emp.full_name);
+
+          for (const colleague of allActiveUsers.results) {
+            if (colleague.id === emp.id || !colleague.work_email) continue;
+            
+            await sendNotificationEmail(env.RESEND_API_KEY, {
+              to: colleague.work_email,
+              subject: notifSubject,
+              html: notifHtml
+            });
+          }
+
+          await env.DB.prepare(`
+            INSERT INTO audit_logs (action, performed_by, target_user_id, details, created_at) 
+            VALUES ('BIRTHDAY_NOTIFICATION_SENT', NULL, ?, 'Notified colleagues about birthday', CURRENT_TIMESTAMP)
+          `).bind(emp.id).run();
+        }
+      }
+    }
+
   } catch (err) {
     console.error('Error handling scheduled reminders:', err);
   }
@@ -1438,6 +1519,38 @@ app.on('POST', ['/api/v1/admin/balance-override', '/admin/balance-override'], au
   ).bind('BALANCE_OVERRIDE', jwtUser.userId, userId, `${action} balance by/to ${amount} for leaveType=${dbLeaveTypeId}`).run();
 
   return c.json({ status: 'success', message: 'Leave balance updated.' });
+});
+
+// ─── Admin Email Templates ────────────────────────────────────────────────────
+
+app.on('GET', ['/api/v1/admin/email-templates', '/admin/email-templates'], auth, async (c) => {
+  try {
+    const list = await c.env.DB.prepare(`SELECT * FROM email_templates`).all();
+    return c.json({ status: 'success', data: list.results || [] });
+  } catch (err) {
+    return c.json({ status: 'fail', message: 'Failed to fetch templates' }, 500);
+  }
+});
+
+app.on('PATCH', ['/api/v1/admin/email-templates/:id', '/admin/email-templates/:id'], auth, async (c) => {
+  const id = c.req.param('id');
+  const body = await c.req.json().catch(() => ({}));
+  
+  if (!body.subject || !body.html_body) {
+    return c.json({ status: 'fail', message: 'Subject and html_body required' }, 400);
+  }
+
+  try {
+    await c.env.DB.prepare(`
+      UPDATE email_templates 
+      SET subject = ?, html_body = ?, updated_at = CURRENT_TIMESTAMP
+      WHERE id = ?
+    `).bind(body.subject, body.html_body, id).run();
+
+    return c.json({ status: 'success', message: 'Template updated successfully' });
+  } catch (err) {
+    return c.json({ status: 'fail', message: 'Failed to update template' }, 500);
+  }
 });
 
 // ─── Analytics Routes ─────────────────────────────────────────────────────────
