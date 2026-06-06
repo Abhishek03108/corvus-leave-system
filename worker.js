@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
-import { signAccessToken, signRefreshToken } from './src/utils/jwt.js';
-import { auth } from './src/middleware/auth.js';
+import { signAccessToken, signRefreshToken, verifyToken } from './src/utils/jwt.js';
+import { auth, requireRole } from './src/middleware/auth.js';
 
 const app = new Hono();
 
@@ -25,7 +25,54 @@ app.use(
   })
 );
 
+// ─── Security Headers ────────────────────────────────────────────────────────
+app.use('*', async (c, next) => {
+  await next();
+  c.res.headers.set('X-Content-Type-Options', 'nosniff');
+  c.res.headers.set('X-Frame-Options', 'DENY');
+  c.res.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+  c.res.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+});
+
 // ─── Helpers ─────────────────────────────────────────────────────────────────
+
+// Simple in-memory rate limiter (per-isolate) to prevent brute-forcing and abuse
+const rateLimitMap = new Map();
+const RATE_LIMIT_CLEANUP_INTERVAL = 5 * 60 * 1000; // 5 minutes
+let lastCleanup = Date.now();
+
+function checkRateLimit(ip, type, limit, periodMs) {
+  const now = Date.now();
+  
+  // Occasional cleanup to prevent memory leaks
+  if (now - lastCleanup > RATE_LIMIT_CLEANUP_INTERVAL) {
+    for (const [key, record] of rateLimitMap.entries()) {
+      if (now > record.resetTime) {
+        rateLimitMap.delete(key);
+      }
+    }
+    lastCleanup = now;
+  }
+
+  const key = `${type}:${ip}`;
+  const record = rateLimitMap.get(key);
+
+  if (!record || now > record.resetTime) {
+    rateLimitMap.set(key, {
+      count: 1,
+      resetTime: now + periodMs
+    });
+    return true; // allowed
+  }
+
+  if (record.count >= limit) {
+    return false; // rate limited
+  }
+
+  record.count += 1;
+  return true; // allowed
+}
+
 
 const OTP_TTL_MS = 5 * 60 * 1000;
 
@@ -54,6 +101,18 @@ function generateOtp() {
   const bytes = new Uint32Array(1);
   crypto.getRandomValues(bytes);
   return String((bytes[0] % 900000) + 100000);
+}
+
+/**
+ * Hash a value with SHA-256 using the Web Crypto API (available in CF Workers).
+ * Used to avoid storing OTPs in plaintext.
+ */
+async function hashValue(value) {
+  const data = new TextEncoder().encode(value);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  return Array.from(new Uint8Array(hashBuffer))
+    .map(b => b.toString(16).padStart(2, '0'))
+    .join('');
 }
 
 async function sendOtpEmail(apiKey, to, otp) {
@@ -118,6 +177,75 @@ async function sendNotificationEmail(apiKey, { to, cc, subject, html }) {
   }
 }
 
+async function sendWelcomeEmail(apiKey, to, fullName) {
+  try {
+    const html = `
+      <div style="font-family: 'Inter', Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f8fafc; padding: 40px 20px;">
+        <div style="background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); border: 1px solid #e2e8f0;">
+
+          <!-- Header -->
+          <div style="background-color: #0f172a; padding: 32px; text-align: center;">
+            <h2 style="margin: 0; color: #ffffff; font-size: 24px; font-weight: 800; letter-spacing: 0.5px;">CORVUS STUDIO</h2>
+            <p style="margin: 6px 0 0 0; color: #94a3b8; font-size: 13px; text-transform: uppercase; letter-spacing: 2px; font-weight: 600;">Leave Management System</p>
+          </div>
+
+          <!-- Body -->
+          <div style="padding: 40px 32px;">
+            <p style="color: #0f172a; font-size: 18px; font-weight: 700; margin: 0 0 8px;">Welcome to Corvus Studio, ${fullName}! 🎉</p>
+            <p style="color: #475569; font-size: 14px; line-height: 1.7; margin: 0 0 24px;">
+              Your account has been provisioned in the <strong>Corvus Studio Leave Management System</strong>. This is your central hub for managing leave requests, tracking balances, and staying informed about studio holidays.
+            </p>
+
+            <div style="background-color: #f0fdfa; border: 1px solid #ccfbf1; border-radius: 12px; padding: 20px 24px; margin-bottom: 28px;">
+              <p style="margin: 0 0 10px; color: #0d9488; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">Getting Started</p>
+              <ul style="margin: 0; padding-left: 18px; color: #0f172a; font-size: 13px; line-height: 1.8;">
+                <li>Log in using your <strong>work email</strong> at the portal</li>
+                <li>Apply for leave directly from your dashboard</li>
+                <li>Track your leave balances in real-time</li>
+                <li>View studio holiday calendar for the year</li>
+              </ul>
+            </div>
+
+            <p style="color: #475569; font-size: 13px; line-height: 1.7; margin: 0 0 24px;">
+              For any assistance, please contact your <strong>team lead</strong> or <strong>manager</strong>. They'll be happy to guide you through the system.
+            </p>
+
+            <div style="text-align: center; margin-top: 8px;">
+              <a href="https://leave.thecorvusstudio.com" style="display: inline-block; background-color: #0d9488; color: #ffffff; text-decoration: none; padding: 12px 28px; border-radius: 8px; font-size: 13px; font-weight: 700; letter-spacing: 0.5px;">Access Your Dashboard &rarr;</a>
+            </div>
+          </div>
+
+          <!-- Footer -->
+          <div style="background-color: #f8fafc; border-top: 1px solid #e2e8f0; padding: 20px 32px; text-align: center;">
+            <p style="margin: 0; color: #94a3b8; font-size: 11px;">This is an automated message from the Corvus Studio Leave System. Please do not reply to this email.</p>
+          </div>
+        </div>
+      </div>
+    `;
+
+    const response = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        from: 'Corvus Studio <noreply@thecorvusstudio.com>',
+        to,
+        subject: 'Welcome to Corvus Studio — Your Leave Portal is Ready',
+        html,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`Welcome email failed: ${response.status} ${errorText}`);
+    }
+  } catch (err) {
+    console.error(`Error in sendWelcomeEmail: ${err.message}`);
+  }
+}
+
 function getNotificationCcList(employeeEmail, department = null) {
   const ccEmails = [
     employeeEmail,
@@ -146,16 +274,7 @@ function getNotificationCcList(employeeEmail, department = null) {
   ).filter(email => email !== 'nihar@thecorvusstudio.com'); // Nihar is excluded as per older logic
 }
 
-// Only admins (Raj, Yash, Nihar) can approve/reject leaves
-function isApproverEmail(email) {
-  if (!email) return false;
-  const approvers = [
-    'raj@thecorvusstudio.com',
-    'yash@thecorvusstudio.com',
-    'nihar@thecorvusstudio.com'
-  ];
-  return approvers.includes(email.toLowerCase().trim());
-}
+
 
 async function sendLeaveAppliedEmail(env, ctx, employeeName, employeeEmail, department, leaveType, fromDate, toDate, leaveCount, reason) {
   const subject = `[Leave Applied] ${employeeName} - ${leaveType} (${leaveCount} Day${leaveCount > 1 ? 's' : ''})`;
@@ -490,7 +609,7 @@ async function handleScheduledReminders(env) {
     }
 
     for (const req of list.results) {
-      console.log(`Sending sick leave reminder to ${req.work_email} for request ID ${req.id}`);
+      console.log(`Sending sick leave reminder for request ID ${req.id}`);
       
       const subject = `[Reminder] Upload Medical Prescription - Sick Leave`;
       
@@ -604,7 +723,7 @@ async function handleScheduledReminders(env) {
 
     if (casualLeavesTomorrow && casualLeavesTomorrow.results && casualLeavesTomorrow.results.length > 0) {
       for (const req of casualLeavesTomorrow.results) {
-        console.log(`Sending casual leave start reminder for ${req.work_email}, request ID ${req.id}`);
+        console.log(`Sending casual leave start reminder for request ID ${req.id}`);
         await sendLeaveStartingReminderEmail(env, null, req);
         await env.DB.prepare(`
           INSERT INTO audit_logs (action, performed_by, target_user_id, details, created_at) 
@@ -647,7 +766,7 @@ async function handleScheduledReminders(env) {
         `).bind(emp.id).first();
 
         if (!alreadySent) {
-          console.log(`Sending birthday wish to ${emp.work_email}`);
+          console.log(`Sending birthday wish to user ID ${emp.id}`);
           
           let wishHtml = wishTpl ? wishTpl.html_body : 'Happy Birthday!';
           wishHtml = wishHtml.replaceAll('{{name}}', emp.full_name);
@@ -738,13 +857,18 @@ app.get('/', (c) => {
 });
 
 app.on('GET', ['/api/health', '/health'], async (c) => {
-  const result = await c.env.DB.prepare('SELECT COUNT(*) as count FROM users').first();
-  return c.json({ status: 'success', totalUsers: result.count });
+  // Do not expose internal counts to unauthenticated callers
+  return c.json({ status: 'success', message: 'Corvus Leave API is healthy.' });
 });
 
 // ─── Auth ─────────────────────────────────────────────────────────────────────
 
 app.on('POST', ['/api/v1/auth/request-otp', '/auth/request-otp'], async (c) => {
+  const ip = c.req.header('CF-Connecting-IP') || c.req.header('x-real-ip') || 'unknown';
+  if (!checkRateLimit(ip, 'request-otp', 5, 60 * 1000)) {
+    return c.json({ status: 'fail', message: 'Too many OTP requests. Please wait a minute before trying again.' }, 429);
+  }
+
   const body = await c.req.json().catch(() => ({}));
   const email = String(body.email || '').toLowerCase().trim();
 
@@ -761,6 +885,7 @@ app.on('POST', ['/api/v1/auth/request-otp', '/auth/request-otp'], async (c) => {
   }
 
   const otp = generateOtp();
+  const otpHash = await hashValue(otp); // Store hash, not plaintext
   const expiresAt = new Date(Date.now() + OTP_TTL_MS).toISOString();
 
   await c.env.DB.prepare(
@@ -770,14 +895,19 @@ app.on('POST', ['/api/v1/auth/request-otp', '/auth/request-otp'], async (c) => {
        otp_hash = excluded.otp_hash,
        expires_at = excluded.expires_at,
        updated_at = CURRENT_TIMESTAMP`
-  ).bind(email, otp, expiresAt).run();
+  ).bind(email, otpHash, expiresAt).run();
 
-  await sendOtpEmail(c.env.RESEND_API_KEY, email, otp);
+  await sendOtpEmail(c.env.RESEND_API_KEY, email, otp); // Send plain OTP, store hash
 
   return c.json({ status: 'success', message: 'OTP sent successfully to your work email.' });
 });
 
 app.on('POST', ['/api/v1/auth/verify-otp', '/auth/verify-otp'], async (c) => {
+  const ip = c.req.header('CF-Connecting-IP') || c.req.header('x-real-ip') || 'unknown';
+  if (!checkRateLimit(ip, 'verify-otp', 5, 60 * 1000)) {
+    return c.json({ status: 'fail', message: 'Too many OTP verification attempts. Please wait a minute.' }, 429);
+  }
+
   const body = await c.req.json().catch(() => ({}));
   const email = String(body.email || '').toLowerCase().trim();
   const otp = String(body.otp || '').replace(/\s+/g, '').trim();
@@ -799,10 +929,11 @@ app.on('POST', ['/api/v1/auth/verify-otp', '/auth/verify-otp'], async (c) => {
     return c.json({ status: 'fail', message: 'OTP has expired or is invalid.' }, 400);
   }
 
-  const storedOtp = String(otpRecord.otp_hash || '').trim();
   const enteredOtp = String(body.otp || '').replace(/\s+/g, '').trim();
+  const enteredOtpHash = await hashValue(enteredOtp); // Hash before comparing
+  const storedOtpHash = String(otpRecord.otp_hash || '').trim();
 
-  if (enteredOtp !== storedOtp) {
+  if (enteredOtpHash !== storedOtpHash) {
     return c.json({ status: 'fail', message: 'Invalid OTP code provided.' }, 400);
   }
 
@@ -827,6 +958,9 @@ app.on('POST', ['/api/v1/auth/verify-otp', '/auth/verify-otp'], async (c) => {
     c.env.JWT_REFRESH_SECRET
   );
 
+  // Set the refresh token in an HttpOnly, Secure, SameSite=None cookie for security (cross-origin cookie access)
+  c.header('Set-Cookie', `refreshToken=${refreshToken}; HttpOnly; Secure; SameSite=None; Path=/; Max-Age=${7 * 24 * 60 * 60}`);
+
   return c.json({
     status: 'success',
     accessToken,
@@ -845,7 +979,55 @@ app.on('POST', ['/api/v1/auth/verify-otp', '/auth/verify-otp'], async (c) => {
   });
 });
 
+app.on('POST', ['/api/v1/auth/refresh-token', '/auth/refresh-token'], async (c) => {
+  const ip = c.req.header('CF-Connecting-IP') || c.req.header('x-real-ip') || 'unknown';
+  if (!checkRateLimit(ip, 'refresh-token', 10, 60 * 1000)) {
+    return c.json({ status: 'fail', message: 'Too many refresh token requests. Please wait a minute.' }, 429);
+  }
+
+  const cookieHeader = c.req.header('Cookie') || '';
+  const cookies = Object.fromEntries(
+    cookieHeader.split(';').map(x => {
+      const parts = x.trim().split('=');
+      return [parts[0], parts.slice(1).join('=')];
+    })
+  );
+  
+  const refreshToken = cookies['refreshToken'];
+
+  if (!refreshToken) {
+    return c.json({ status: 'fail', message: 'Refresh token is missing.' }, 401);
+  }
+
+  try {
+    const payload = await verifyToken(refreshToken, c.env.JWT_REFRESH_SECRET);
+    const userId = payload.userId;
+
+    const user = await c.env.DB.prepare(
+      `SELECT id, full_name, work_email, role FROM users WHERE id = ? AND status = 'active' LIMIT 1`
+    ).bind(userId).first();
+
+    if (!user) {
+      return c.json({ status: 'fail', message: 'User not found or inactive.' }, 401);
+    }
+
+    const accessToken = await signAccessToken(
+      { userId: user.id, role: user.role, email: user.work_email },
+      c.env.JWT_SECRET
+    );
+
+    return c.json({
+      status: 'success',
+      accessToken
+    });
+  } catch (error) {
+    return c.json({ status: 'fail', message: 'Invalid or expired refresh token.' }, 401);
+  }
+});
+
 app.on('POST', ['/api/v1/auth/logout', '/auth/logout'], auth, async (c) => {
+  // Clear the HttpOnly refresh token cookie on logout
+  c.header('Set-Cookie', `refreshToken=; HttpOnly; Secure; SameSite=None; Path=/; Max-Age=0`);
   return c.json({
     status: 'success',
     message: 'Logged out successfully.'
@@ -1093,6 +1275,17 @@ app.on('POST', ['/api/v1/leave/apply', '/leave/apply'], auth, async (c) => {
     return c.json({ status: 'fail', message: 'leaveType/leaveTypeId, fromDate, and toDate are required.' }, 400);
   }
 
+  // Validate date format YYYY-MM-DD
+  const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+  if (!dateRegex.test(fromDate) || !dateRegex.test(toDate)) {
+    return c.json({ status: 'fail', message: 'Invalid date format. Use YYYY-MM-DD.' }, 400);
+  }
+
+  // Validate reason length
+  if (reason && reason.length > 500) {
+    return c.json({ status: 'fail', message: 'Reason must be 500 characters or less.' }, 400);
+  }
+
   const workingDays = await calculateWorkingDays(c.env.DB, fromDate, toDate);
   if (workingDays === 0) {
     return c.json({ status: 'fail', message: 'Selected date range contains no working days (weekends or holidays only).' }, 400);
@@ -1229,11 +1422,8 @@ app.on('GET', ['/api/v1/leave/team-requests', '/leave/team-requests'], auth, asy
   });
 });
 
-app.on('PATCH', ['/api/v1/leave/:id/status', '/leave/:id/status'], auth, async (c) => {
+app.on('PATCH', ['/api/v1/leave/:id/status', '/leave/:id/status'], auth, requireRole('admin', 'senior_manager'), async (c) => {
   const jwtUser = c.get('user');
-  if (!isApproverEmail(jwtUser.email)) {
-    return c.json({ status: 'fail', message: 'You are not authorized to approve or reject leave requests.' }, 403);
-  }
   const id      = c.req.param('id');
   const body    = await c.req.json().catch(() => ({}));
   const { status, managerComment } = body;
@@ -1338,6 +1528,31 @@ app.on('PATCH', ['/api/v1/leave/:id/medical-document', '/leave/:id/medical-docum
     return c.json({ status: 'fail', message: 'Invalid file format. Only PDF, JPG, and PNG files are accepted for medical documents.' }, 400);
   }
 
+  // Validate that the URL points to an approved domain if it is a full URL
+  if (medicalDocumentPath.startsWith('http://') || medicalDocumentPath.startsWith('https://')) {
+    try {
+      const parsedUrl = new URL(medicalDocumentPath);
+      const hostname = parsedUrl.hostname.toLowerCase();
+      const allowedDomains = [
+        'thecorvusstudio.com',
+        'google.com',
+        'google.co.in',
+        'drive.google.com',
+        'docs.google.com',
+        'dropbox.com',
+        'r2.dev'
+      ];
+      const isAllowed = allowedDomains.some(domain => 
+        hostname === domain || hostname.endsWith('.' + domain)
+      );
+      if (!isAllowed) {
+        return c.json({ status: 'fail', message: 'Document URL must be from an approved source (e.g. Google Drive, Dropbox, or the studio domain).' }, 400);
+      }
+    } catch (e) {
+      return c.json({ status: 'fail', message: 'Invalid document URL format.' }, 400);
+    }
+  }
+
   const request = await c.env.DB.prepare(
     `SELECT * FROM leave_requests WHERE id = ? LIMIT 1`
   ).bind(id).first();
@@ -1392,7 +1607,7 @@ app.on('PATCH', ['/api/v1/leave/:id/medical-document', '/leave/:id/medical-docum
 
 // ─── Admin Routes ─────────────────────────────────────────────────────────────
 
-app.on('GET', ['/api/v1/admin/audit-logs', '/admin/audit-logs'], auth, async (c) => {
+app.on('GET', ['/api/v1/admin/audit-logs', '/admin/audit-logs'], auth, requireRole('admin', 'senior_manager'), async (c) => {
   const result = await c.env.DB.prepare(
     `SELECT al.*, u.full_name as user_full_name, u.work_email as user_work_email
      FROM audit_logs al
@@ -1416,7 +1631,7 @@ app.on('GET', ['/api/v1/admin/audit-logs', '/admin/audit-logs'], auth, async (c)
   });
 });
 
-app.on('POST', ['/api/v1/admin/employee', '/admin/employee'], auth, async (c) => {
+app.on('POST', ['/api/v1/admin/employee', '/admin/employee'], auth, requireRole('admin'), async (c) => {
   const jwtUser = c.get('user');
   const body    = await c.req.json().catch(() => ({}));
   const { fullName, workEmail, role, designation, department, employeeType, joiningDate, contactNumber, personalEmail } = body;
@@ -1454,10 +1669,52 @@ app.on('POST', ['/api/v1/admin/employee', '/admin/employee'], auth, async (c) =>
     `INSERT INTO audit_logs (action, performed_by, target_user_id, details, created_at) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)`
   ).bind('EMPLOYEE_CREATED', jwtUser.userId, newUserId, `Created: ${fullName} (${workEmail})`).run();
 
+  // Send welcome email — fire and forget, non-blocking
+  if (c.env.RESEND_API_KEY) {
+    c.executionCtx?.waitUntil(
+      sendWelcomeEmail(c.env.RESEND_API_KEY, normalizedEmail, fullName)
+    );
+  }
+
   return c.json({ status: 'success', message: 'Employee created successfully.', data: { id: newUserId } });
 });
 
-app.on('PATCH', ['/api/v1/admin/employee/:id', '/admin/employee/:id'], auth, async (c) => {
+app.on('DELETE', ['/api/v1/admin/employee/:id', '/admin/employee/:id'], auth, requireRole('admin'), async (c) => {
+  const jwtUser = c.get('user');
+  const id = parseInt(c.req.param('id'), 10);
+
+  if (!id || isNaN(id)) {
+    return c.json({ status: 'fail', message: 'Invalid employee ID.' }, 400);
+  }
+
+  // Prevent self-deletion
+  if (id === jwtUser.userId) {
+    return c.json({ status: 'fail', message: 'You cannot remove your own account.' }, 403);
+  }
+
+  // Fetch the employee record before deleting for the audit log
+  const emp = await c.env.DB.prepare(
+    `SELECT full_name, work_email FROM users WHERE id = ? LIMIT 1`
+  ).bind(id).first();
+
+  if (!emp) {
+    return c.json({ status: 'fail', message: 'Employee not found.' }, 404);
+  }
+
+  // Delete in dependency order: leave_balances → leave_requests → users
+  await c.env.DB.prepare(`DELETE FROM leave_balances WHERE user_id = ?`).bind(id).run();
+  await c.env.DB.prepare(`DELETE FROM leave_requests WHERE user_id = ?`).bind(id).run();
+  await c.env.DB.prepare(`DELETE FROM users WHERE id = ?`).bind(id).run();
+
+  // Audit log — no email sent per spec
+  await c.env.DB.prepare(
+    `INSERT INTO audit_logs (action, performed_by, target_user_id, details, created_at) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)`
+  ).bind('EMPLOYEE_REMOVED', jwtUser.userId, id, `Removed: ${emp.full_name} (${emp.work_email})`).run();
+
+  return c.json({ status: 'success', message: `Employee ${emp.full_name} has been removed.` });
+});
+
+app.on('PATCH', ['/api/v1/admin/employee/:id', '/admin/employee/:id'], auth, requireRole('admin'), async (c) => {
   const jwtUser = c.get('user');
   const id      = c.req.param('id');
   const body    = await c.req.json().catch(() => ({}));
@@ -1487,7 +1744,7 @@ app.on('PATCH', ['/api/v1/admin/employee/:id', '/admin/employee/:id'], auth, asy
   return c.json({ status: 'success', message: 'Employee updated successfully.' });
 });
 
-app.on('POST', ['/api/v1/admin/balance-override', '/admin/balance-override'], auth, async (c) => {
+app.on('POST', ['/api/v1/admin/balance-override', '/admin/balance-override'], auth, requireRole('admin'), async (c) => {
   const jwtUser = c.get('user');
   const body    = await c.req.json().catch(() => ({}));
   const userId = body.userId || body.employeeId;
@@ -1527,7 +1784,7 @@ app.on('POST', ['/api/v1/admin/balance-override', '/admin/balance-override'], au
 
 // ─── Admin Email Templates ────────────────────────────────────────────────────
 
-app.on('GET', ['/api/v1/admin/email-templates', '/admin/email-templates'], auth, async (c) => {
+app.on('GET', ['/api/v1/admin/email-templates', '/admin/email-templates'], auth, requireRole('admin'), async (c) => {
   try {
     const list = await c.env.DB.prepare(`SELECT * FROM email_templates`).all();
     return c.json({ status: 'success', data: list.results || [] });
@@ -1536,7 +1793,7 @@ app.on('GET', ['/api/v1/admin/email-templates', '/admin/email-templates'], auth,
   }
 });
 
-app.on('PATCH', ['/api/v1/admin/email-templates/:id', '/admin/email-templates/:id'], auth, async (c) => {
+app.on('PATCH', ['/api/v1/admin/email-templates/:id', '/admin/email-templates/:id'], auth, requireRole('admin'), async (c) => {
   const id = c.req.param('id');
   const body = await c.req.json().catch(() => ({}));
   
@@ -1651,7 +1908,7 @@ app.on('GET', ['/api/v1/analytics/monthly', '/analytics/monthly'], auth, async (
   ).bind(startDate, endDate).all();
   const holidayDates = new Set(holidaysResult.results.map(h => h.holiday_date));
 
-  const userIsApprover = isApproverEmail(dbUser.work_email);
+  const userIsApprover = dbUser.role === 'admin' || dbUser.role === 'senior_manager';
 
   const STUDIO_DEPARTMENTS = ['Production', 'Creative', 'Engineering', 'Leadership', 'Operations'];
   const LEAVE_RISK_THRESHOLD = 2;

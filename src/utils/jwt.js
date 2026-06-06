@@ -6,7 +6,7 @@ export const signAccessToken = async ({ userId, role, email }, secret) => {
   return await new SignJWT({ userId, role, email })
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
-    .setExpirationTime('7d')
+    .setExpirationTime('15m') // Short-lived access token; refresh token handles re-auth
     .sign(getSecret(secret));
 };
 

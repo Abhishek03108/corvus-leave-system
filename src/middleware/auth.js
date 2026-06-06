@@ -21,3 +21,19 @@ export const auth = async (c, next) => {
     );
   }
 };
+
+/**
+ * Role guard middleware.
+ * Usage: requireRole('admin') or requireRole('admin', 'senior_manager')
+ * Must be used AFTER auth middleware so c.get('user') is populated.
+ */
+export const requireRole = (...allowedRoles) => async (c, next) => {
+  const user = c.get('user');
+  if (!user || !allowedRoles.includes(user.role)) {
+    return c.json(
+      { status: 'fail', message: 'Forbidden: You do not have permission to perform this action.' },
+      403
+    );
+  }
+  await next();
+};
