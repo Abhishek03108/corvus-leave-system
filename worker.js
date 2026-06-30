@@ -940,7 +940,8 @@ app.on('POST', ['/api/v1/auth/verify-otp', '/auth/verify-otp'], async (c) => {
   await c.env.DB.prepare(`DELETE FROM otp_codes WHERE email = ?`).bind(email).run();
 
   const user = await c.env.DB.prepare(
-    `SELECT id, full_name, work_email, role, designation, department, employee_type, joining_date, dob
+    `SELECT id, full_name, work_email, role, designation, department, employee_type, joining_date, dob,
+            can_approve_leaves, can_add_employee, can_remove_employee
      FROM users WHERE work_email = ? LIMIT 1`
   ).bind(email).first();
 
@@ -975,6 +976,9 @@ app.on('POST', ['/api/v1/auth/verify-otp', '/auth/verify-otp'], async (c) => {
       employeeType: user.employee_type,
       joiningDate: user.joining_date,
       dob: user.dob,
+      canApproveLeaves: user.can_approve_leaves === 1,
+      canAddEmployee: user.can_add_employee === 1,
+      canRemoveEmployee: user.can_remove_employee === 1
     },
   });
 });
@@ -1037,7 +1041,8 @@ app.on('POST', ['/api/v1/auth/logout', '/auth/logout'], auth, async (c) => {
 app.on('GET', ['/api/v1/auth/me', '/auth/me'], auth, async (c) => {
   const jwtUser = c.get('user');
   const user = await c.env.DB.prepare(
-    `SELECT id, full_name, work_email, role, designation, department, employee_type, joining_date, dob, contact_number
+    `SELECT id, full_name, work_email, role, designation, department, employee_type, joining_date, dob, contact_number,
+            can_approve_leaves, can_add_employee, can_remove_employee
      FROM users WHERE id = ? LIMIT 1`
   ).bind(jwtUser.userId).first();
 
@@ -1056,6 +1061,9 @@ app.on('GET', ['/api/v1/auth/me', '/auth/me'], auth, async (c) => {
       joiningDate: user.joining_date,
       dob: user.dob,
       contactNumber: user.contact_number,
+      canApproveLeaves: user.can_approve_leaves === 1,
+      canAddEmployee: user.can_add_employee === 1,
+      canRemoveEmployee: user.can_remove_employee === 1
     },
   });
 });
@@ -1104,7 +1112,8 @@ app.on('PATCH', ['/api/v1/user/profile', '/user/profile'], auth, async (c) => {
 
 app.on('GET', ['/api/v1/user/list', '/user/list'], auth, async (c) => {
   const usersResult = await c.env.DB.prepare(
-    `SELECT id, full_name, work_email, role, status, designation, department, employee_type, joining_date, dob, contact_number
+    `SELECT id, full_name, work_email, role, status, designation, department, employee_type, joining_date, dob, contact_number,
+            can_approve_leaves, can_add_employee, can_remove_employee
      FROM users WHERE status = 'active' ORDER BY full_name ASC`
   ).all();
 
@@ -1140,6 +1149,9 @@ app.on('GET', ['/api/v1/user/list', '/user/list'], auth, async (c) => {
       joiningDate: u.joining_date,
       dob: u.dob,
       contactNumber: u.contact_number,
+      canApproveLeaves: u.can_approve_leaves === 1,
+      canAddEmployee: u.can_add_employee === 1,
+      canRemoveEmployee: u.can_remove_employee === 1,
       leaveBalances: balancesByUser[u.id] || [],
     })),
   });
@@ -1428,6 +1440,14 @@ app.on('PATCH', ['/api/v1/leave/:id/status', '/leave/:id/status'], auth, require
   const body    = await c.req.json().catch(() => ({}));
   const { status, managerComment } = body;
 
+  const caller = await c.env.DB.prepare(`SELECT work_email, can_approve_leaves FROM users WHERE id = ? LIMIT 1`).bind(jwtUser.userId).first();
+  if (!caller) return c.json({ status: 'fail', message: 'User not found.' }, 404);
+
+  const isRaj = caller.work_email === 'raj@thecorvusstudio.com';
+  if (!isRaj && !caller.can_approve_leaves) {
+    return c.json({ status: 'fail', message: 'You do not have permission to approve leaves.' }, 403);
+  }
+
   if (!['approved', 'rejected'].includes(status)) {
     return c.json({ status: 'fail', message: 'Status must be approved or rejected.' }, 400);
   }
@@ -1636,6 +1656,14 @@ app.on('POST', ['/api/v1/admin/employee', '/admin/employee'], auth, requireRole(
   const body    = await c.req.json().catch(() => ({}));
   const { fullName, workEmail, role, designation, department, employeeType, joiningDate, contactNumber, personalEmail } = body;
 
+  const caller = await c.env.DB.prepare(`SELECT work_email, can_add_employee FROM users WHERE id = ? LIMIT 1`).bind(jwtUser.userId).first();
+  if (!caller) return c.json({ status: 'fail', message: 'User not found.' }, 404);
+
+  const isRaj = caller.work_email === 'raj@thecorvusstudio.com';
+  if (!isRaj && !caller.can_add_employee) {
+    return c.json({ status: 'fail', message: 'You do not have permission to add employees.' }, 403);
+  }
+
   if (!fullName || !workEmail || !role) {
     return c.json({ status: 'fail', message: 'fullName, workEmail, and role are required.' }, 400);
   }
@@ -1683,6 +1711,14 @@ app.on('DELETE', ['/api/v1/admin/employee/:id', '/admin/employee/:id'], auth, re
   const jwtUser = c.get('user');
   const id = parseInt(c.req.param('id'), 10);
 
+  const caller = await c.env.DB.prepare(`SELECT work_email, can_remove_employee FROM users WHERE id = ? LIMIT 1`).bind(jwtUser.userId).first();
+  if (!caller) return c.json({ status: 'fail', message: 'User not found.' }, 404);
+
+  const isRaj = caller.work_email === 'raj@thecorvusstudio.com';
+  if (!isRaj && !caller.can_remove_employee) {
+    return c.json({ status: 'fail', message: 'You do not have permission to remove employees.' }, 403);
+  }
+
   if (!id || isNaN(id)) {
     return c.json({ status: 'fail', message: 'Invalid employee ID.' }, 400);
   }
@@ -1703,7 +1739,7 @@ app.on('DELETE', ['/api/v1/admin/employee/:id', '/admin/employee/:id'], auth, re
 
   // Delete in dependency order: leave_balances → leave_requests → users
   await c.env.DB.prepare(`DELETE FROM leave_balances WHERE user_id = ?`).bind(id).run();
-  await c.env.DB.prepare(`DELETE FROM leave_requests WHERE user_id = ?`).bind(id).run();
+  await c.env.DB.prepare(`DELETE FROM leave_requests WHERE employee_id = ?`).bind(id).run();
   await c.env.DB.prepare(`DELETE FROM users WHERE id = ?`).bind(id).run();
 
   // Audit log — no email sent per spec
@@ -1718,24 +1754,44 @@ app.on('PATCH', ['/api/v1/admin/employee/:id', '/admin/employee/:id'], auth, req
   const jwtUser = c.get('user');
   const id      = c.req.param('id');
   const body    = await c.req.json().catch(() => ({}));
-  const { fullName, role, designation, department, employeeType, joiningDate, contactNumber, status, personalEmail } = body;
+  const { 
+    fullName, role, designation, department, employeeType, joiningDate, contactNumber, status, personalEmail,
+    canApproveLeaves, canAddEmployee, canRemoveEmployee
+  } = body;
 
-  await c.env.DB.prepare(
-    `UPDATE users SET
-       full_name      = COALESCE(?, full_name),
-       role           = COALESCE(?, role),
-       designation    = COALESCE(?, designation),
-       department     = COALESCE(?, department),
-       employee_type  = COALESCE(?, employee_type),
-       joining_date   = COALESCE(?, joining_date),
-       contact_number = COALESCE(?, contact_number),
-       status         = COALESCE(?, status),
-       personal_email = COALESCE(?, personal_email)
-     WHERE id = ?`
-  ).bind(
-    fullName || null, role || null, designation || null, department || null,
-    employeeType || null, joiningDate || null, contactNumber || null, status || null, personalEmail || null, id
-  ).run();
+  const caller = await c.env.DB.prepare(`SELECT work_email FROM users WHERE id = ?`).bind(jwtUser.userId).first();
+  const isRaj = caller && caller.work_email === 'raj@thecorvusstudio.com';
+
+  if (!isRaj && (role !== undefined || canApproveLeaves !== undefined || canAddEmployee !== undefined || canRemoveEmployee !== undefined)) {
+    return c.json({ status: 'fail', message: 'Only the super admin Raj can update roles and permissions.' }, 403);
+  }
+
+  let query = 'UPDATE users SET ';
+  const params = [];
+  const updates = [];
+
+  if (fullName !== undefined) { updates.push('full_name = ?'); params.push(fullName); }
+  if (role !== undefined) { updates.push('role = ?'); params.push(role); }
+  if (designation !== undefined) { updates.push('designation = ?'); params.push(designation); }
+  if (department !== undefined) { updates.push('department = ?'); params.push(department); }
+  if (employeeType !== undefined) { updates.push('employee_type = ?'); params.push(employeeType); }
+  if (joiningDate !== undefined) { updates.push('joining_date = ?'); params.push(joiningDate); }
+  if (contactNumber !== undefined) { updates.push('contact_number = ?'); params.push(contactNumber); }
+  if (status !== undefined) { updates.push('status = ?'); params.push(status); }
+  if (personalEmail !== undefined) { updates.push('personal_email = ?'); params.push(personalEmail); }
+
+  if (canApproveLeaves !== undefined) { updates.push('can_approve_leaves = ?'); params.push(canApproveLeaves ? 1 : 0); }
+  if (canAddEmployee !== undefined) { updates.push('can_add_employee = ?'); params.push(canAddEmployee ? 1 : 0); }
+  if (canRemoveEmployee !== undefined) { updates.push('can_remove_employee = ?'); params.push(canRemoveEmployee ? 1 : 0); }
+
+  if (updates.length === 0) {
+    return c.json({ status: 'fail', message: 'No fields provided to update.' }, 400);
+  }
+
+  query += updates.join(', ') + ' WHERE id = ?';
+  params.push(id);
+
+  await c.env.DB.prepare(query).bind(...params).run();
 
   await c.env.DB.prepare(
     `INSERT INTO audit_logs (action, performed_by, target_user_id, details, created_at) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)`
