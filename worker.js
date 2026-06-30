@@ -732,42 +732,38 @@ async function handleScheduledReminders(env) {
       }
     }
 
-    // 4. Birthday Reminders (Today in IST)
+    // 4. Birthday Reminders (Automated Scheduled Emails)
     // The cron will run at 18:30 UTC which is exactly 12:00 AM IST.
-    // We check for users whose DOB month/day matches current IST date.
     
     // Get current date in IST
     const istDate = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
     const istMonth = String(istDate.getMonth() + 1).padStart(2, '0');
     const istDay = String(istDate.getDate()).padStart(2, '0');
-    const istMonthDay = `-${istMonth}-${istDay}`; // e.g. '-09-24'
-    const todayStr = istDate.toISOString().split('T')[0];
+    const istMonthDay = `-${istMonth}-${istDay}`; // e.g. '-06-30'
 
-    const birthdayUsers = await env.DB.prepare(`
-      SELECT id, full_name, work_email, profile_image
+    // Get templates
+    const templates = await env.DB.prepare(`SELECT id, subject, html_body FROM email_templates`).all();
+    const wishTpl = templates.results.find(t => t.id === 'birthday_wish');
+    const notifTpl = templates.results.find(t => t.id === 'birthday_notification');
+    const allActiveUsers = await env.DB.prepare(`SELECT id, work_email FROM users WHERE status = 'active'`).all();
+
+    // Part A: Send Birthday Wish to Birthday Person Today at 12 AM
+    const birthdayUsersToday = await env.DB.prepare(`
+      SELECT id, full_name, work_email
       FROM users 
       WHERE status = 'active' AND dob LIKE ?
     `).bind(`%${istMonthDay}`).all();
 
-    if (birthdayUsers && birthdayUsers.results && birthdayUsers.results.length > 0) {
-      // Get templates
-      const templates = await env.DB.prepare(`SELECT id, subject, html_body FROM email_templates`).all();
-      const wishTpl = templates.results.find(t => t.id === 'birthday_wish');
-      const notifTpl = templates.results.find(t => t.id === 'birthday_notification');
-
-      const allActiveUsers = await env.DB.prepare(`SELECT id, work_email FROM users WHERE status = 'active'`).all();
-
-      for (const emp of birthdayUsers.results) {
+    if (birthdayUsersToday && birthdayUsersToday.results && birthdayUsersToday.results.length > 0) {
+      for (const emp of birthdayUsersToday.results) {
         if (!emp.work_email) continue;
-        
-        // Check if we already sent the wish today
+
         const alreadySent = await env.DB.prepare(`
           SELECT 1 FROM audit_logs WHERE action = 'BIRTHDAY_WISH_SENT' AND target_user_id = ? AND date(created_at) = date('now')
         `).bind(emp.id).first();
 
         if (!alreadySent) {
           console.log(`Sending birthday wish to user ID ${emp.id}`);
-          
           let wishHtml = wishTpl ? wishTpl.html_body : 'Happy Birthday!';
           wishHtml = wishHtml.replaceAll('{{name}}', emp.full_name);
           let wishSubject = wishTpl ? wishTpl.subject : 'Happy Birthday!';
@@ -783,16 +779,38 @@ async function handleScheduledReminders(env) {
             INSERT INTO audit_logs (action, performed_by, target_user_id, details, created_at) 
             VALUES ('BIRTHDAY_WISH_SENT', NULL, ?, 'Sent birthday wish email', CURRENT_TIMESTAMP)
           `).bind(emp.id).run();
+        }
+      }
+    }
 
-          // Send notifications to colleagues
-          let notifHtml = notifTpl ? notifTpl.html_body : 'Today is their birthday!';
+    // Part B: Send Day-Before Birthday Notification to Colleagues
+    const tomorrowDate = new Date(istDate.getTime() + 24 * 60 * 60 * 1000);
+    const tomorrowMonth = String(tomorrowDate.getMonth() + 1).padStart(2, '0');
+    const tomorrowDay = String(tomorrowDate.getDate()).padStart(2, '0');
+    const tomorrowMonthDay = `-${tomorrowMonth}-${tomorrowDay}`;
+
+    const birthdayUsersTomorrow = await env.DB.prepare(`
+      SELECT id, full_name, work_email
+      FROM users 
+      WHERE status = 'active' AND dob LIKE ?
+    `).bind(`%${tomorrowMonthDay}`).all();
+
+    if (birthdayUsersTomorrow && birthdayUsersTomorrow.results && birthdayUsersTomorrow.results.length > 0) {
+      for (const emp of birthdayUsersTomorrow.results) {
+        const alreadyNotified = await env.DB.prepare(`
+          SELECT 1 FROM audit_logs WHERE action = 'BIRTHDAY_NOTIFICATION_SENT' AND target_user_id = ? AND date(created_at) = date('now')
+        `).bind(emp.id).first();
+
+        if (!alreadyNotified) {
+          console.log(`Sending day-before birthday notification for user ID ${emp.id} to colleagues`);
+          let notifHtml = notifTpl ? notifTpl.html_body : 'Tomorrow is {{name}}\'s birthday!';
           notifHtml = notifHtml.replaceAll('{{name}}', emp.full_name);
-          let notifSubject = notifTpl ? notifTpl.subject : 'Birthday Today!';
+          let notifSubject = notifTpl ? notifTpl.subject : 'Birthday Tomorrow!';
           notifSubject = notifSubject.replaceAll('{{name}}', emp.full_name);
 
           for (const colleague of allActiveUsers.results) {
             if (colleague.id === emp.id || !colleague.work_email) continue;
-            
+
             await sendNotificationEmail(env.RESEND_API_KEY, {
               to: colleague.work_email,
               subject: notifSubject,
@@ -802,7 +820,7 @@ async function handleScheduledReminders(env) {
 
           await env.DB.prepare(`
             INSERT INTO audit_logs (action, performed_by, target_user_id, details, created_at) 
-            VALUES ('BIRTHDAY_NOTIFICATION_SENT', NULL, ?, 'Notified colleagues about birthday', CURRENT_TIMESTAMP)
+            VALUES ('BIRTHDAY_NOTIFICATION_SENT', NULL, ?, 'Notified colleagues about birthday one day before', CURRENT_TIMESTAMP)
           `).bind(emp.id).run();
         }
       }
