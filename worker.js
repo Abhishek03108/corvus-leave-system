@@ -1818,6 +1818,43 @@ app.on('PATCH', ['/api/v1/admin/employee/:id', '/admin/employee/:id'], auth, req
   return c.json({ status: 'success', message: 'Employee updated successfully.' });
 });
 
+app.on('POST', ['/api/v1/admin/test-birthday-demo', '/admin/test-birthday-demo'], auth, requireRole('admin'), async (c) => {
+  const jwtUser = c.get('user');
+
+  // Load templates
+  const templates = await c.env.DB.prepare(`SELECT id, subject, html_body FROM email_templates`).all();
+  const wishTpl = templates.results.find(t => t.id === 'birthday_wish');
+  const notifTpl = templates.results.find(t => t.id === 'birthday_notification');
+
+  // 1. Send Birthday Wish to Ronika
+  let wishHtml = wishTpl ? wishTpl.html_body : 'Happy Birthday!';
+  wishHtml = wishHtml.replaceAll('{{name}}', 'Ronika Walia');
+  let wishSubject = wishTpl ? wishTpl.subject : 'Happy Birthday!';
+  wishSubject = wishSubject.replaceAll('{{name}}', 'Ronika Walia');
+
+  console.log('Test Demo: Sending birthday wish to Ronika');
+  await sendNotificationEmail(c.env.RESEND_API_KEY, {
+    to: 'ronika@thecorvusstudio.com',
+    subject: wishSubject,
+    html: wishHtml
+  });
+
+  // 2. Send Birthday Notification about Ronika's birthday to Raj
+  let notifHtml = notifTpl ? notifTpl.html_body : 'Tomorrow is Ronika\'s birthday!';
+  notifHtml = notifHtml.replaceAll('{{name}}', 'Ronika Walia');
+  let notifSubject = notifTpl ? notifTpl.subject : 'Birthday Tomorrow!';
+  notifSubject = notifSubject.replaceAll('{{name}}', 'Ronika Walia');
+
+  console.log('Test Demo: Sending birthday notification about Ronika to Raj');
+  await sendNotificationEmail(c.env.RESEND_API_KEY, {
+    to: 'raj@thecorvusstudio.com',
+    subject: notifSubject,
+    html: notifHtml
+  });
+
+  return c.json({ status: 'success', message: 'Demo birthday emails successfully triggered to Ronika and Raj!' });
+});
+
 app.on('POST', ['/api/v1/admin/balance-override', '/admin/balance-override'], auth, requireRole('admin'), async (c) => {
   const jwtUser = c.get('user');
   const body    = await c.req.json().catch(() => ({}));
