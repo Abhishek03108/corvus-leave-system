@@ -67,9 +67,9 @@ const CSS = `
 html, body { background: #fff; color: #1a1a1a; margin: 0; padding: 0; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
 
 /* â”€â”€ Page Layout â”€â”€ */
-.page, .page-2 {
+.page {
   width: 210mm;
-  height: 297mm;
+  height: 296mm;
   margin: 0 auto;
   position: relative;
   font-family: 'Times New Roman', Times, serif;
@@ -77,6 +77,17 @@ html, body { background: #fff; color: #1a1a1a; margin: 0; padding: 0; -webkit-pr
   background: #fff;
   overflow: hidden;
   page-break-after: always;
+  page-break-inside: avoid;
+}
+.page-2 {
+  width: 210mm;
+  height: 296mm;
+  margin: 0 auto;
+  position: relative;
+  font-family: 'Times New Roman', Times, serif;
+  font-size: 11pt;
+  background: #fff;
+  overflow: hidden;
   page-break-inside: avoid;
 }
 
