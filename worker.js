@@ -2104,7 +2104,7 @@ app.on('POST', ['/api/v1/admin/offer-letters/generate', '/admin/offer-letters/ge
 
     // Check if this employee already has a draft document ID — reuse it to avoid counter inflation on preview
     const existingDraft = await c.env.DB.prepare(
-      `SELECT document_id FROM offer_letters WHERE employee_id = ? ORDER BY created_at DESC LIMIT 1`
+      `SELECT document_id FROM offer_letters WHERE employee_id = ? ORDER BY generated_at DESC LIMIT 1`
     ).bind(employee.id).first();
 
     let documentId;
