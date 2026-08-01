@@ -30,6 +30,16 @@ CREATE TABLE IF NOT EXISTS audit_logs (
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE IF NOT EXISTS offer_letters (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  document_id TEXT UNIQUE NOT NULL,
+  employee_id INTEGER NOT NULL,
+  employment_type TEXT NOT NULL,
+  generated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  created_by INTEGER,
+  FOREIGN KEY(employee_id) REFERENCES users(id)
+);
+
 -- Step 3: Update existing Raj Kishore with full data
 UPDATE users SET
   full_name = 'Raj Kishore Kumar',

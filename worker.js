@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { signAccessToken, signRefreshToken, verifyToken } from './src/utils/jwt.js';
 import { auth, requireRole } from './src/middleware/auth.js';
+import { generateDocumentId, detectEmploymentType, buildPlaceholders, substitutePlaceholders } from './src/services/offerLetterService.js';
 
 const app = new Hono();
 
@@ -151,21 +152,25 @@ async function sendOtpEmail(apiKey, to, otp) {
   }
 }
 
-async function sendNotificationEmail(apiKey, { to, cc, subject, html }) {
+async function sendNotificationEmail(apiKey, { to, cc, subject, html, attachments }) {
   try {
+    const payload = {
+      from: 'Corvus Leave System <noreply@thecorvusstudio.com>',
+      to,
+      cc,
+      subject,
+      html,
+    };
+    if (attachments && Array.isArray(attachments)) {
+      payload.attachments = attachments;
+    }
     const response = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        from: 'Corvus Leave System <noreply@thecorvusstudio.com>',
-        to,
-        cc,
-        subject,
-        html,
-      }),
+      body: JSON.stringify(payload),
     });
 
     if (!response.ok) {
@@ -1818,42 +1823,6 @@ app.on('PATCH', ['/api/v1/admin/employee/:id', '/admin/employee/:id'], auth, req
   return c.json({ status: 'success', message: 'Employee updated successfully.' });
 });
 
-app.on('POST', ['/api/v1/admin/test-birthday-demo', '/admin/test-birthday-demo'], auth, requireRole('admin'), async (c) => {
-  const jwtUser = c.get('user');
-
-  // Load templates
-  const templates = await c.env.DB.prepare(`SELECT id, subject, html_body FROM email_templates`).all();
-  const wishTpl = templates.results.find(t => t.id === 'birthday_wish');
-  const notifTpl = templates.results.find(t => t.id === 'birthday_notification');
-
-  // 1. Send Birthday Wish to Ronika
-  let wishHtml = wishTpl ? wishTpl.html_body : 'Happy Birthday!';
-  wishHtml = wishHtml.replaceAll('{{name}}', 'Ronika Walia');
-  let wishSubject = wishTpl ? wishTpl.subject : 'Happy Birthday!';
-  wishSubject = wishSubject.replaceAll('{{name}}', 'Ronika Walia');
-
-  console.log('Test Demo: Sending birthday wish to Ronika');
-  await sendNotificationEmail(c.env.RESEND_API_KEY, {
-    to: 'ronika@thecorvusstudio.com',
-    subject: wishSubject,
-    html: wishHtml
-  });
-
-  // 2. Send Birthday Notification about Ronika's birthday to Raj
-  let notifHtml = notifTpl ? notifTpl.html_body : 'Tomorrow is Ronika\'s birthday!';
-  notifHtml = notifHtml.replaceAll('{{name}}', 'Ronika Walia');
-  let notifSubject = notifTpl ? notifTpl.subject : 'Birthday Tomorrow!';
-  notifSubject = notifSubject.replaceAll('{{name}}', 'Ronika Walia');
-
-  console.log('Test Demo: Sending birthday notification about Ronika to Raj');
-  await sendNotificationEmail(c.env.RESEND_API_KEY, {
-    to: 'raj@thecorvusstudio.com',
-    subject: notifSubject,
-    html: notifHtml
-  });
-
-  return c.json({ status: 'success', message: 'Demo birthday emails successfully triggered to Ronika and Raj!' });
-});
 
 app.on('POST', ['/api/v1/admin/balance-override', '/admin/balance-override'], auth, requireRole('admin'), async (c) => {
   const jwtUser = c.get('user');
@@ -2113,6 +2082,170 @@ app.on('GET', ['/api/v1/analytics/monthly', '/analytics/monthly'], auth, async (
       riskAlerts,
       monthName,
     },
+  });
+});
+
+app.on('POST', ['/api/v1/admin/offer-letters/generate', '/admin/offer-letters/generate'], auth, requireRole('admin'), async (c) => {
+  const jwtUser = c.get('user');
+  const body = await c.req.json().catch(() => ({}));
+  const { employee_id, options } = body;
+
+  if (!employee_id) {
+    return c.json({ status: 'fail', message: 'employee_id is required.' }, 400);
+  }
+
+  const employee = await c.env.DB.prepare('SELECT * FROM users WHERE id = ?').bind(employee_id).first();
+  if (!employee) {
+    return c.json({ status: 'fail', message: 'Employee not found.' }, 404);
+  }
+
+  const employmentType = detectEmploymentType(employee.employee_type);
+  const documentId = await generateDocumentId(c.env.DB);
+
+  // Store in offer_letters table to guarantee Document ID uniqueness
+  await c.env.DB.prepare(
+    `INSERT INTO offer_letters (document_id, employee_id, employment_type, created_by) VALUES (?, ?, ?, ?)`
+  ).bind(documentId, employee.id, employmentType, jwtUser.id).run();
+
+  const placeholders = buildPlaceholders(employee, documentId, options || {});
+
+  // Generate clean formatted document template
+  const documentHtml = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <title>Offer Letter - ${placeholders['{{Document ID}}']}</title>
+      <style>
+        body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #1e293b; margin: 0; padding: 40px; line-height: 1.6; }
+        .header { border-bottom: 2px solid #0f172a; padding-bottom: 20px; margin-bottom: 30px; display: flex; justify-content: space-between; align-items: flex-end; }
+        .logo-title { font-size: 24px; font-weight: 800; letter-spacing: 1px; color: #0f172a; }
+        .sub-title { font-size: 12px; color: #64748b; text-transform: uppercase; letter-spacing: 1.5px; }
+        .doc-meta { text-align: right; font-size: 13px; color: #475569; }
+        .doc-id { font-weight: 700; color: #0284c7; }
+        .section-title { font-size: 16px; font-weight: 700; color: #0f172a; margin-top: 25px; margin-bottom: 10px; border-bottom: 1px solid #e2e8f0; padding-bottom: 5px; }
+        .meta-table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        .meta-table td { padding: 8px 12px; border: 1px solid #e2e8f0; font-size: 14px; }
+        .meta-table td.label { font-weight: 600; background-color: #f8fafc; width: 35%; color: #334155; }
+        .content-body { font-size: 14px; margin-bottom: 30px; text-align: justify; }
+        .footer-signatures { margin-top: 60px; display: flex; justify-content: space-between; page-break-inside: avoid; }
+        .sig-box { width: 45%; text-align: center; border-top: 1px solid #cbd5e1; padding-top: 10px; font-size: 13px; font-weight: 600; color: #334155; }
+      </style>
+    </head>
+    <body>
+      <div class="header">
+        <div>
+          <div class="logo-title">CORVUS STUDIO</div>
+          <div class="sub-title">Official Employment Offer Letter</div>
+        </div>
+        <div class="doc-meta">
+          <div>Ref: <span class="doc-id">${placeholders['{{Document ID}}']}</span></div>
+          <div>Date: ${placeholders['{{Date}}']}</div>
+        </div>
+      </div>
+
+      <div class="content-body">
+        <p>Dear <strong>${placeholders['{{Employee Name}}']}</strong>,</p>
+
+        <p>On behalf of <strong>${placeholders['{{Company Name}}']}</strong>, we are pleased to offer you the position of <strong>${placeholders['{{Designation}}']}</strong> within our <strong>${placeholders['{{Department}}']}</strong> department. Your employment classification will be <strong>${placeholders['{{Employment Type}}']}</strong>.</p>
+
+        <div class="section-title">Employment Overview</div>
+        <table class="meta-table">
+          <tr><td class="label">Candidate Name</td><td>${placeholders['{{Employee Name}}']}</td></tr>
+          <tr><td class="label">Designation</td><td>${placeholders['{{Designation}}']}</td></tr>
+          <tr><td class="label">Department</td><td>${placeholders['{{Department}}']}</td></tr>
+          <tr><td class="label">Employment Category</td><td>${placeholders['{{Employment Type}}']}</td></tr>
+          <tr><td class="label">Joining Date</td><td>${placeholders['{{Joining Date}}']}</td></tr>
+          <tr><td class="label">Remuneration / Stipend</td><td>${placeholders['{{Salary}}']}</td></tr>
+          <tr><td class="label">Work Location</td><td>${placeholders['{{Work Location}}']}</td></tr>
+          <tr><td class="label">Reporting Manager</td><td>${placeholders['{{Reporting Manager}}']}</td></tr>
+        </table>
+
+        <p>We are confident that your expertise and background will make valuable contributions to our team. Please review the offer summary above and sign below to indicate your acceptance.</p>
+
+        <p>Welcome aboard!</p>
+      </div>
+
+      <div class="footer-signatures">
+        <div class="sig-box">
+          <div>Authorized Signatory</div>
+          <div style="font-weight: 400; color: #64748b;">${placeholders['{{Company Name}}']}</div>
+        </div>
+        <div class="sig-box">
+          <div>Candidate Signature</div>
+          <div style="font-weight: 400; color: #64748b;">${placeholders['{{Employee Name}}']}</div>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+
+  return c.json({
+    status: 'success',
+    data: {
+      document_id: documentId,
+      employment_type: employmentType,
+      placeholders,
+      html_content: documentHtml
+    }
+  });
+});
+
+app.on('POST', ['/api/v1/admin/offer-letters/send-email', '/admin/offer-letters/send-email'], auth, requireRole('admin'), async (c) => {
+  const body = await c.req.json().catch(() => ({}));
+  const { employee_id, document_id, pdf_base64 } = body;
+
+  if (!employee_id || !document_id) {
+    return c.json({ status: 'fail', message: 'employee_id and document_id are required.' }, 400);
+  }
+
+  const employee = await c.env.DB.prepare('SELECT * FROM users WHERE id = ?').bind(employee_id).first();
+  if (!employee) {
+    return c.json({ status: 'fail', message: 'Employee not found.' }, 404);
+  }
+
+  const recipientEmail = employee.personal_email || employee.work_email;
+  if (!recipientEmail) {
+    return c.json({ status: 'fail', message: 'No valid recipient email address found for employee.' }, 400);
+  }
+
+  const emailHtml = `
+    <div style="font-family: 'Helvetica Neue', Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f8fafc; padding: 30px;">
+      <div style="background-color: #ffffff; border-radius: 12px; padding: 30px; border: 1px solid #e2e8f0;">
+        <h2 style="color: #0f172a; margin-top: 0;">CORVUS STUDIO</h2>
+        <p style="color: #334155; font-size: 15px;">Dear ${employee.full_name},</p>
+        <p style="color: #475569; font-size: 14px; line-height: 1.6;">
+          Congratulations! We are delighted to share your official Employment Offer Letter (Ref: <strong>${document_id}</strong>) with Corvus Studio.
+        </p>
+        <p style="color: #475569; font-size: 14px; line-height: 1.6;">
+          Please review the attached document for full details regarding your role, terms, and onboarding instructions.
+        </p>
+        <p style="color: #475569; font-size: 14px; margin-top: 25px;">
+          Best regards,<br/>
+          <strong>HR & Leadership Team</strong><br/>
+          Corvus Studio
+        </p>
+      </div>
+    </div>
+  `;
+
+  const attachments = pdf_base64 ? [
+    {
+      filename: `Offer_Letter_${document_id}_${employee.full_name.replace(/\s+/g, '_')}.pdf`,
+      content: pdf_base64,
+    }
+  ] : undefined;
+
+  await sendNotificationEmail(c.env.RESEND_API_KEY, {
+    to: recipientEmail,
+    subject: `Official Offer Letter (${document_id}) - Corvus Studio`,
+    html: emailHtml,
+    attachments
+  });
+
+  return c.json({
+    status: 'success',
+    message: `Offer letter successfully emailed to ${recipientEmail}.`
   });
 });
 
