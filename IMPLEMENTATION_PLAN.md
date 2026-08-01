@@ -13,10 +13,13 @@ This running document tracks progress of migrating the Offer Letter module from 
 - [x] Update switch cases in `generateOfferLetterHtml()` to render `parttime` template.
 - [x] Update email sending block in `worker.js` with professional body template.
 - [x] Route emails to candidate Personal Email (TO), Corvus Official Email (CC, if assigned), and BCC careers@thecorvusstudio.com.
+- [x] **Add custom candidate support**: Bypasses D1 SELECT query when `employee_id` is 0 or 'new' and uses temporary candidate options.
 
 ### Phase 2 — Frontend Page (Completed)
 - [x] Create `src/pages/OfferLetterPage.jsx`
   - [x] Searchable employee autocomplete dropdown
+  - [x] **Typable candidate fallback**: Allows inputting any name directly (useful for prospective hires who aren't registered yet).
+  - [x] **Dynamic email fields**: Displays text boxes for Personal Email (required) and Corvus Official Email (optional) only when a custom candidate is typed.
   - [x] Calendar date picker for Joining Date
   - [x] Employment Type dropdown (5 options)
   - [x] Numeric input + unit selector for Internship, Contract, and Part-time durations

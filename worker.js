@@ -2091,7 +2091,7 @@ app.on('POST', ['/api/v1/admin/offer-letters/generate', '/admin/offer-letters/ge
     const body = await c.req.json().catch(() => ({}));
     const { employee_id, options } = body;
 
-    if (!employee_id) {
+    if (employee_id === undefined || employee_id === null || employee_id === '') {
       return c.json({ status: 'fail', message: 'employee_id is required.' }, 400);
     }
 
@@ -2168,7 +2168,7 @@ app.on('POST', ['/api/v1/admin/offer-letters/send-email', '/admin/offer-letters/
   const body = await c.req.json().catch(() => ({}));
   const { employee_id, document_id, pdf_base64 } = body;
 
-  if (!employee_id || !document_id) {
+  if ((employee_id === undefined || employee_id === null || employee_id === '') || !document_id) {
     return c.json({ status: 'fail', message: 'employee_id and document_id are required.' }, 400);
   }
 
