@@ -108,69 +108,193 @@ export function buildPlaceholders(emp, docId, opts = {}) {
 export function getResponsibilitiesText(roleName) {
   const role = (roleName || '').toLowerCase();
 
-  if (role.includes('3d artist') || role.includes('3d generalist')) {
-    return 'creating high-quality 3D assets, including modeling, texturing, UV unwrapping, material mapping, basic rigging, lighting setups, and rendering to meet the visual standards of the production pipeline';
+  // ─── 3D / Generalist ────────────────────────────────────────────────────────
+  if (role.includes('3d generalist')) {
+    return `building and maintaining a broad range of production-ready 3D assets across the full pipeline. Day-to-day responsibilities will include polygonal modeling, hard-surface and organic sculpting in ZBrush or Blender, UV unwrapping, PBR texture painting in Substance Painter, basic character or prop rigging in Maya or Blender, lighting and shading setup in Arnold or Cycles, and compositing final renders in Nuke or After Effects. You will contribute assets across character, environment, prop, and FX departments as directed by the project lead, while maintaining clean naming conventions, version control hygiene, and adherence to the studio's poly-count and resolution specifications.`;
   }
-  if (role.includes('character artist')) {
-    return 'developing high-fidelity 3D character models and organic sculpts, executing high-to-low poly baking, clean retopology, anatomy validation, realistic texture painting (skin, eyes, fabric), and hair card/groom generation';
-  }
-  if (role.includes('environment artist')) {
-    return 'designing and assembling modular environment assets, architectural layouts, organic terrains, foliage setups, set dressing, material blending, and world-building within real-time game engines or cinematic render engines';
-  }
-  if (role.includes('prop artist')) {
-    return 'modeling detailed hard-surface props, weapons, industrial elements, and mechanical systems, applying PBR texture painting, and optimizing topology and lod layouts for real-time and cinematic engines';
-  }
-  if (role.includes('texture') || role.includes('lookdev') || role.includes('look dev')) {
-    return 'creating advanced PBR materials and procedural texture maps (using Substance Painter/Designer or Mari), crafting look-development shader graphs, and validating visual response under multiple lighting rigs';
-  }
-  if (role.includes('rigging') || role.includes('rig')) {
-    return 'designing and constructing robust character skeleton rigs, facial rigging systems, mechanical control nodes, skin weight deformation setups, dynamic hair/cloth solvers, and scripting animation helper pipelines';
-  }
-  if (role.includes('groom')) {
-    return 'styling, styling, and simulating complex hair, fur, and feather grooms using industry-standard tools (XGen, Ornatrix, Houdini), setting up custom shading networks, and optimizing groom assets for render performance';
-  }
-  if (role.includes('animator') || role.includes('animation')) {
-    return 'authoring keyframe character animation, realistic creature locomotion, facial expressions, body mechanics, lip-sync tracks, and clean integration and refinement of raw motion capture data';
-  }
-  if (role.includes('motion graphics') || role.includes('mograph')) {
-    return 'designing and animating motion graphic elements, typographic sequences, logo resolves, UI animations, promotional video assets, and overlay assets to support broadcast, web, and internal campaigns';
-  }
-  if (role.includes('vfx artist') || role.includes('fx artist') || role.includes('vfx') || role.includes('fx')) {
-    return 'creating dynamic simulations including pyro (fire/smoke), fluid dynamics, destruction setups, particle effects, cloth and rigid-body simulations, rendering FX passes, and scripting simulation helpers';
-  }
-  if (role.includes('compositor') || role.includes('compositing')) {
-    return 'blending multiple render passes (CG, matte paintings, atmospheric elements) with live-action footage, executing precise color grading, camera tracking alignment, rotoscope masking, clean plate prep, and final grade output';
-  }
-  if (role.includes('roto') || role.includes('paint') || role.includes('matchmove')) {
-    return 'delivering accurate rotoscope masks, plate cleanup, wire removal, marker tracking, 3D camera tracking, distortion grid calibration, and layout matchmoving to align virtual elements with real-world plates';
-  }
-  if (role.includes('matte painter') || role.includes('matte painting')) {
-    return 'painting photorealistic digital matte backgrounds, skies, and environment extensions, set dressing layouts, and projecting paint layers onto 3D cards in compositing software';
-  }
-  if (role.includes('unreal') || role.includes('unity') || role.includes('game developer')) {
-    return 'assembling real-time levels, configuring dynamic lighting, setting up material shaders, scripting blueprint or C# game logic, performance optimization, and integrating virtual production and camera rigs';
-  }
-  if (role.includes('technical artist') || role.includes('tech artist')) {
-    return 'bridging art and programming pipelines, writing custom scripts/tools for DCC apps (Maya, Houdini, Blender), optimizing shader nodes, diagnosing performance bottlenecks, and maintaining technical pipeline specifications';
-  }
-  if (role.includes('concept artist')) {
-    return 'producing high-quality design work, including character turnarounds, environment mood boards, keyframe illustrations, weapon designs, and visual guides to establish the artistic tone of production';
-  }
-  if (role.includes('storyboard')) {
-    return 'illustrating sequence boards, narrative panels, and timing keys, mapping scene actions, camera moves, and expressions to represent script directions visually';
-  }
-  if (role.includes('video editor') || role.includes('editor')) {
-    return 'assembling project cuts, editing cinematic sequences and showreels, syncing audio assets, adjusting color grading profiles, and compiling finalized renders for internal review and public release';
-  }
-  if (role.includes('director') || role.includes('lead') || role.includes('creative')) {
-    return 'guiding the overall visual identity, artistic direction, and quality standard of projects, reviewing assets and shots, providing constructive feedback to artists, and communicating styling goals to stakeholders';
-  }
-  if (role.includes('coordinator') || role.includes('manager') || role.includes('production')) {
-    return 'organizing production schedules, tracking tasks and milestones (using ShotGrid/Jira), coordinating team meetings, managing client deliverables, and scheduling pipeline resource allocation';
+  if (role.includes('3d artist')) {
+    return `creating production-quality 3D assets that meet the visual and technical requirements of the studio's active projects. Your work will span modeling (both hard-surface and organic), UV layout, texture baking, material assignment, and render-ready delivery. You will collaborate with the Art Director and Lead Artist to ensure that all assets align with the established style guide, and will participate in internal asset reviews, iterate on feedback, and maintain organised project files within the shared pipeline.`;
   }
 
-  // General fallback responsibilities
-  return 'executing professional duties, collaborating with the production and creative teams on ongoing projects, delivering assets that meet quality requirements, and performing other related tasks assigned in connection with the role';
+  // ─── Character / Creature ────────────────────────────────────────────────────
+  if (role.includes('character artist')) {
+    return `developing high-fidelity hero and background character assets from concept art through to final delivery. Responsibilities include high-poly sculpting in ZBrush (anatomy, clothing, accessories), retopology for game-ready or film-ready meshes, UV unwrapping, skin and fabric texture painting (albedo, roughness, metallic, SSS maps) in Substance Painter or Mari, and hair card or XGen groom generation. You will collaborate with the Rigging team to ensure deformation-friendly topology, and with the LookDev team to validate shading under production lighting conditions. Assets must pass quality-check milestones before being published to the production pipeline.`;
+  }
+  if (role.includes('organic model') || role.includes('digital sculptor') || role.includes('organic modell')) {
+    return `executing high-detail organic sculpts for characters, creatures, and organic props using ZBrush as the primary sculpting tool, with Blender or Maya for retopology and cleanup. Deliverables include concept-accurate high-resolution sculpts, clean production-ready low-poly meshes, baked normal and displacement maps, and approved surface detail passes. You will work from approved concept sheets, incorporate feedback from Art Direction reviews, and deliver assets with documented polycount, UV islands, and bake specifications.`;
+  }
+  if (role.includes('hard surface')) {
+    return `designing and constructing precision hard-surface models for props, vehicles, weapons, mechanical rigs, and architectural elements. You will work in Maya, Blender, or 3ds Max, maintaining strict edge-flow discipline, clean boolean and subdivision workflows, and production-safe topology. Deliverables include high-poly source meshes, optimised low-poly game or film versions, accurate UV maps, and Substance Painter texture sets (Base Colour, Roughness, Metallic, Normal, AO). You will collaborate with the pipeline team on naming conventions and LOD requirements.`;
+  }
+
+  // ─── Environment / Level ────────────────────────────────────────────────────
+  if (role.includes('environment artist')) {
+    return `designing, building, and assembling production-quality environment assets and scenes. Responsibilities include modular kit modelling for architectural and natural environments, terrain sculpting and painting, foliage card creation and placement, set dressing and scene composition, material blending and procedural texture setup (using Substance Designer or Unreal Engine materials), and performance optimisation for real-time or cinematic pipelines. You will work from approved layout references and style frames, collaborating closely with the Art Director, Lighting Artist, and Technical Artist to ensure the scene reads correctly under final lighting and camera conditions.`;
+  }
+  if (role.includes('level designer') || role.includes('level design')) {
+    return `designing and constructing game levels that deliver a compelling and balanced player experience. Responsibilities include greyboxing and whitebox layout in Unreal Engine or Unity, defining encounter zones, navigation paths, sight lines, and pacing, collaborating with the Art team for final art pass integration, placing and configuring gameplay triggers, scripting basic Blueprint or C# logic for interactive level elements, and conducting playtesting sessions to iterate on layout feedback. You will document level design decisions and maintain version-controlled level files throughout production.`;
+  }
+  if (role.includes('background artist')) {
+    return `producing stylised or realistic background illustrations and painted environments for animation, comics, or pre-production. Deliverables will include perspective-accurate background layouts, painted colour backgrounds, sky and atmospheric elements, and stylistic reference boards. You will work from approved storyboards and art direction briefs, maintain consistency across scenes within a sequence, and deliver source files (PSD or equivalent) with organised, labelled layers.`;
+  }
+
+  // ─── Props ───────────────────────────────────────────────────────────────────
+  if (role.includes('prop artist')) {
+    return `modeling and texturing a wide range of production props including mechanical parts, furniture, food, tools, and interactive objects. You will work from concept reference sheets, creating both hero (high-detail) and background (optimised) prop variants. Deliverables include clean topology meshes, baked texture sets in Substance Painter (Base Colour, Normal, Roughness, Metallic, AO, Emissive as applicable), and correctly scaled, pivot-positioned assets exported in the pipeline-required format. You will adhere to polycount budgets set per asset tier and participate in weekly prop review sessions.`;
+  }
+
+  // ─── Texturing / LookDev ─────────────────────────────────────────────────────
+  if (role.includes('lookdev') || role.includes('look dev')) {
+    return `establishing and maintaining the final visual look of characters, props, and environments in the studio's render pipeline. Responsibilities include building and refining Arnold, V-Ray, or Karma shader networks, creating physically accurate material libraries, validating assets under multiple studio lighting rigs, producing look-development turntables for client and director approval, and communicating material specifications to the Lighting team. You will use Substance Painter and Designer for texture authoring, and Katana or Maya's Hypershade for shader construction, ensuring all materials meet the approved look target.`;
+  }
+  if (role.includes('texture')) {
+    return `creating production-quality texture maps for characters, props, environments, and vehicles. Using Substance Painter and Substance Designer as primary tools (with Mari for hero assets), you will produce full PBR texture sets including Base Colour, Roughness, Metallic, Normal, Height, Opacity, and Emissive maps at project-specified resolutions. You will work from approved concept art and photo-reference packs, follow the studio's texel density guidelines, maintain organised layer stacks, and export final maps in the format required by the downstream shading and rendering team.`;
+  }
+  if (role.includes('shader artist')) {
+    return `researching, developing, and maintaining advanced shader networks for the studio's real-time and offline rendering pipelines. Responsibilities include writing custom HLSL/GLSL or OSL shaders, building material graphs in Unreal Engine's Material Editor or Houdini's VOP network, creating procedural material libraries, and profiling shader performance. You will work alongside Technical Artists and LookDev Artists to solve complex visual problems, produce shader documentation, and provide artist-friendly shader variants for use across multiple projects.`;
+  }
+
+  // ─── Lighting ────────────────────────────────────────────────────────────────
+  if (role.includes('lighting artist') || role.includes('lighting')) {
+    return `building, optimising, and rendering production lighting setups for characters, environments, and sequences. Responsibilities include placing and configuring area, directional, HDRI, and practical light sources in Arnold, V-Ray, or Redshift; crafting multi-layer lighting rigs that support the approved look-development; rendering beauty and auxiliary AOV passes (diffuse, specular, shadow, subsurface, depth, etc.); troubleshooting render artefacts; and collaborating with the Compositing team to ensure pass integration is seamless. You will work from director-approved lighting references and participate in lighting review sessions, iterating on notes to achieve the final approved frame.`;
+  }
+
+  // ─── Rigging ─────────────────────────────────────────────────────────────────
+  if (role.includes('rigging') || role.includes('rig artist')) {
+    return `designing and building production rigs for characters, creatures, vehicles, and mechanical props. Responsibilities include skeleton construction and joint orientation, forward and inverse kinematic control systems, facial blend-shape and FACS-based rig setup, skin weight painting for clean deformation, space-switching and constraint-based rig logic, cloth and hair dynamics solver integration, and scripting Python-based rig automation tools in Maya or Blender. You will work in close collaboration with Character Artists (for topology feedback) and Animators (to validate rig usability and responsiveness), and will publish final rig files to the asset management system upon approval.`;
+  }
+
+  // ─── Groom ───────────────────────────────────────────────────────────────────
+  if (role.includes('groom')) {
+    return `creating, styling, and simulating realistic hair, fur, feathers, and other fiber-based assets using XGen, Ornatrix, or Houdini's Vellum/Grooming tools. Responsibilities include guiding and shaping groom assets from approved concept reference, building custom hair shading networks (using Marschner or PxrHair models), running and caching dynamic simulation passes, optimising groom density and render settings for production render budgets, and integrating final grooms with the character pipeline. You will liaise with the Rigging and Lighting teams to confirm groom behaviour under deformation and lighting conditions.`;
+  }
+
+  // ─── Animation ───────────────────────────────────────────────────────────────
+  if (role.includes('motion capture') || role.includes('mocap')) {
+    return `processing, cleaning, and integrating motion capture data into the studio's animation pipeline. Responsibilities include importing and retargeting raw mocap files onto studio character rigs, solving and cleaning erratic marker data, layering hand-keyed polish animation over cleaned mocap, integrating cloth and hair simulations, and exporting finalized animation caches in the required format. You will collaborate with the Rigging team on skeleton compatibility and with the Animation Director to ensure performances meet the narrative intent of each sequence.`;
+  }
+  if (role.includes('2d animator') || role.includes('cel animator') || role.includes('stop motion')) {
+    return `producing frame-by-frame 2D animation or stop-motion sequences that meet the studio's quality and style standards. Responsibilities include rough animation blocking, inbetweening, cleanup linework, and digital colouring, or — for stop-motion — armature manipulation, set dressing, and frame-capture management. You will work to approved animatics and timing sheets, collaborate with the Storyboard and Compositing teams, maintain scene files with clean layer naming, and deliver final frames or composited sequences on schedule.`;
+  }
+  if (role.includes('previz') || role.includes('layout artist')) {
+    return `producing pre-visualisation animation sequences, cinematic layouts, and camera blocking for director review. Responsibilities include building rough layout scenes in Maya or Blender, animating camera moves and character blocking using approved storyboards as reference, producing exported video playblasts for director and client review, and updating layouts based on iterative notes. You will work closely with the Director, Storyboard Artist, and Animation teams to translate the narrative vision into actionable scene layouts for full production.`;
+  }
+  if (role.includes('animator') || role.includes('animation')) {
+    return `delivering high-quality character and creature animation across assigned sequences. Responsibilities include translate-and-pose-blocking from approved story reels, spline refinement for fluid and realistic motion arcs, body mechanics polish, facial performance animation (driven by blend shapes or FACS rig controls), lip-sync work against approved audio, and final delivery of animation caches or baked scenes to the downstream rendering team. You will participate in daily animation review sessions, implement notes efficiently, and manage your own scene organisation and version-control hygiene.`;
+  }
+
+  // ─── VFX / Simulation ────────────────────────────────────────────────────────
+  if (role.includes('simulation artist') || role.includes('procedural artist')) {
+    return `developing procedural and physics-based simulations for production, including cloth, rigid body, soft body, fluid, and destruction effects using Houdini, Maya nCloth/nParticles, or Blender's simulation stack. Responsibilities include setting up and tuning solver parameters, caching and exporting simulations as Alembic or VDB volumes, collaborating with the FX and Rendering teams to achieve the approved look, and optimising simulation fidelity versus computation time for the project's schedule. You will document simulation setups for pipeline reuse and provide technical notes to downstream artists.`;
+  }
+  if (role.includes('vfx artist') || role.includes('fx artist') || role.includes('vfx') || role.includes(' fx ') || role === 'fx') {
+    return `creating photorealistic and stylised visual effects that integrate seamlessly with live-action or CG footage. Responsibilities include Houdini-based pyro, fluid, rigid-body, and particle simulations; rendering VDB and particle volumes in Karma, Mantra, or Arnold; compositing FX passes in Nuke; and working with the Compositing team to ensure seamless integration. You will own the full FX shot pipeline — from initial R&D and client approval through cached simulation delivery and final render — while maintaining clear shot notes and version documentation.`;
+  }
+
+  // ─── Compositing ─────────────────────────────────────────────────────────────
+  if (role.includes('compositor') || role.includes('compositing')) {
+    return `integrating CG renders, FX passes, matte paintings, and live-action plates into polished final frames. Using Nuke as the primary compositing tool (and After Effects for motion graphic elements), you will build multi-pass comp trees, execute colour-grading operations, manage lens distortion and camera tracking alignments, apply atmospheric and depth-of-field treatments, and deliver frames and sequences to the client delivery specification. You will work from approved colour scripts and DI references, flag any upstream technical issues to the relevant department, and ensure all final output meets the agreed format, colour-space, and resolution requirements.`;
+  }
+
+  // ─── Roto / Paint / Matchmove ───────────────────────────────────────────────
+  if (role.includes('matchmove')) {
+    return `performing 3D camera and object tracking to integrate CG elements with live-action footage. Responsibilities include feature-point tracking and solving in SynthEyes, 3DEqualizer, or PFTrack; geometry reconstruction for set extensions; lens distortion analysis and export; and delivering solved camera data with accompanying scene geometry to the compositing and 3D teams. You will review shot plates for tracking viability, flag problem frames early, and provide clean exports in the pipeline-required format.`;
+  }
+  if (role.includes('roto')) {
+    return `producing frame-accurate rotoscope mattes, clean-plate paint work, and wire/rig removal for assigned shots. Using Silhouette, Nuke, or After Effects, you will trace subject silhouettes with edge-accurate splines, maintain motion continuity across frames, output matte sequences in EXR format to the compositing team's specification, and complete plate-paint tasks (sky replacements, set-extension preparations, marker removal) on schedule. You will flag any problematic shots to your supervisor and maintain detailed shot logs for pipeline handover.`;
+  }
+  if (role.includes('matte paint')) {
+    return `creating photorealistic and stylised digital matte paintings for environment extensions, background replacements, and set augmentations. Using Photoshop as the primary painting tool, combined with projection work in Nuke or Maya, you will produce layered environment paintings that integrate convincingly with the CG and live-action elements. Responsibilities include researching photo reference, building colour-accurate sky and landscape elements, projecting paintings onto 3D geometry cards, and delivering finalised paintings with documented projection setups for compositing.`;
+  }
+
+  // ─── Real-time / Games ───────────────────────────────────────────────────────
+  if (role.includes('unreal')) {
+    return `working within Unreal Engine to assemble, light, and polish real-time environments, cinematics, and interactive experiences. Responsibilities include importing and configuring 3D assets (static meshes, skeletal meshes, materials), building Lumen or ray-traced lighting rigs, sequencer-based cinematic animation, Blueprint scripting for interactive elements, Niagara particle setup, performance profiling using Unreal Insights, and packaging builds for review. You will collaborate with the Art and Engineering teams to meet visual and technical targets.`;
+  }
+  if (role.includes('unity')) {
+    return `developing real-time content within the Unity game engine, including scene assembly, material and shader graph setup, C# scripting for gameplay and UI systems, particle effects using Unity's VFX Graph or Particle System, performance optimisation, and build deployment. You will work from design documents and technical briefs, collaborate with designers and artists, maintain a clean project hierarchy, and participate in regular code and asset reviews.`;
+  }
+  if (role.includes('game artist')) {
+    return `creating visually polished, technically optimised game-ready assets including characters, props, environments, and UI elements. You will model, texture, and export assets within the agreed polycount and texture budget, set up materials in Unreal Engine or Unity using PBR workflows, implement LOD groups, and work with the Level Design team to ensure assets integrate correctly within the game world. You will maintain clean naming and folder conventions across all deliverables.`;
+  }
+  if (role.includes('game designer')) {
+    return `designing, documenting, and implementing gameplay systems, mechanics, progression loops, and player interactions. Responsibilities include writing clear and detailed Game Design Documents (GDDs), prototyping mechanics in Unreal Engine (Blueprint) or Unity (C#), balancing systems through structured playtesting and data analysis, collaborating with Art and Engineering teams to ensure design feasibility, and iterating on designs based on player feedback. You will maintain an organised design backlog and communicate design intent effectively to all team stakeholders.`;
+  }
+
+  // ─── Technical / Pipeline ────────────────────────────────────────────────────
+  if (role.includes('technical artist') || role.includes('tech artist')) {
+    return `bridging the art and engineering departments by developing tools, scripts, and workflows that improve production efficiency and quality. Responsibilities include writing Python scripts and custom plugins for Maya, Houdini, Blender, or Unreal Engine; building and maintaining shader and material libraries; diagnosing and resolving pipeline bottlenecks; maintaining the asset management and version-control system; and providing technical onboarding support to artists. You will document all tools and workflows and proactively research new technology that could benefit the studio's pipeline.`;
+  }
+  if (role.includes('pipeline td') || role.includes('technical director')) {
+    return `designing, building, and maintaining the studio's end-to-end production pipeline — from asset ingestion through to final delivery. Responsibilities include architecting data flow between DCC tools (Maya, Houdini, Nuke, Unreal), developing asset management, version control, and publish/checkout systems, writing Python/C++ pipeline tools, automating render farm job submission and monitoring, and providing technical support to the production team. You will lead pipeline reviews, produce technical documentation, and proactively evaluate new tools and technologies for pipeline adoption.`;
+  }
+
+  // ─── Concept / 2D / Pre-production ──────────────────────────────────────────
+  if (role.includes('concept artist')) {
+    return `generating original visual concepts that define the artistic language of characters, environments, props, and key scenes. Deliverables will include character design sheets (front, side, ¾ views with colour callouts), environment mood frames and colour scripts, prop detail drawings, and visual-development boards. Working in Photoshop or Procreate, you will iterate rapidly on rough thumbnails, incorporate feedback from the Creative Director, and produce final high-quality concept renders suitable for handover to the 3D, Environment, and Character teams.`;
+  }
+  if (role.includes('storyboard')) {
+    return `translating scripts and director's notes into clear, communicative storyboard sequences. Responsibilities include rough thumbnail boarding for story structure, refined panel drawing with clear staging, camera angles, and character acting, as well as panel timing annotation for animatics. You will work in close collaboration with the Director and Layout team, revise boards based on review notes, and deliver organised panel packs (PSD and PDF) or animated animatics (exported via Storyboard Pro or Premiere) within the agreed schedule.`;
+  }
+  if (role.includes('character designer')) {
+    return `creating original character designs from initial brief through to final approved turnarounds. Responsibilities include sketch exploration across multiple design directions, iterative refinement based on director and client feedback, production of clean orthographic turnarounds (front, side, back, and ¾ views), colour and material callout sheets, and expression reference sheets. Designs must be clearly communicated to the 3D Character team for downstream production, and all final artwork will be delivered in layered PSD format.`;
+  }
+  if (role.includes('narrative designer')) {
+    return `crafting the story structures, dialogue systems, and lore frameworks that drive the studio's interactive or cinematic productions. Responsibilities include writing narrative design documents (world bibles, character biographies, quest structures), scripting branching dialogue trees in tools such as Ink, Twine, or Articy Draft, collaborating with Game Design and Art teams to ensure narrative cohesion across all player touchpoints, and reviewing final implementations for story consistency and tone of voice.`;
+  }
+
+  // ─── Post-Production ─────────────────────────────────────────────────────────
+  if (role.includes('video editor') || role.includes('editor')) {
+    return `assembling and polishing video content across the studio's internal and client-facing projects. Using Premiere Pro or DaVinci Resolve as the primary editing platform, you will cut footage and rendered sequences, sync audio and music, apply colour grading passes, create title card graphics, manage project media organisation, and export deliverables in the required codec and format specification. You will collaborate with the Compositing and Motion Graphics teams on hybrid projects, incorporate feedback from review sessions efficiently, and maintain a clear, documented project file structure.`;
+  }
+  if (role.includes('color grad') || role.includes('colour grad') || role.includes('color grading')) {
+    return `delivering the final colour grade for film, animation, and commercial projects using DaVinci Resolve. Responsibilities include primary and secondary colour correction, building show-consistent CDL values and LUT packages, managing HDR and SDR simultaneous deliveries, working to approved colour scripts and director references, and exporting graded masters in the specified colour space and format. You will collaborate with the Compositing and VFX teams to align on interchange formats and integrate seamlessly into the finishing pipeline.`;
+  }
+  if (role.includes('sound designer')) {
+    return `designing, recording, and implementing sound effects, ambient soundscapes, and interactive audio for the studio's productions. Using Pro Tools, Logic Pro, or similar DAW software, you will source and edit sound libraries, create bespoke foley and effects, mix dialogue and music layers, and export final audio stems in the project-specified format. For interactive projects, you will implement and test audio in Unreal Engine or Unity (using FMOD or Wwise middleware) and ensure spatial audio behaves correctly across target platforms.`;
+  }
+  if (role.includes('motion graphic') || role.includes('mograph')) {
+    return `designing and producing motion graphic content for broadcast, social media, and client campaigns. Using After Effects as the primary tool (with Cinema 4D for 3D graphic elements), you will build animated title sequences, infographic animations, logo reveals, lower-thirds, and promotional video assets. You will work from approved style frames and brand guidelines, produce multiple rounds of revisions efficiently, and deliver final renders in the codec, resolution, and frame-rate specifications required by each platform.`;
+  }
+
+  // ─── Virtual Production / AR / VR ────────────────────────────────────────────
+  if (role.includes('virtual production')) {
+    return `supporting the studio's virtual production workflows, including LED volume setup, real-time scene assembly in Unreal Engine for in-camera VFX, camera tracking integration, and live compositing. Responsibilities include building and optimising UE scenes for real-time performance on LED wall hardware, calibrating camera tracking data from Mo-Sys or similar systems, collaborating with the Director of Photography on on-set lighting matching, and troubleshooting real-time pipeline issues under live production conditions.`;
+  }
+  if (role.includes('ar/vr') || role.includes('ar developer') || role.includes('vr developer') || role.includes('xr')) {
+    return `developing immersive augmented and virtual reality experiences for the studio's interactive projects. Responsibilities include building real-time scenes optimised for VR/AR headsets (Meta Quest, HoloLens, iOS ARKit), writing C# or Blueprint interaction logic, ensuring frame-rate and latency targets are met for comfort, configuring spatial audio, and testing across target devices. You will work alongside the Art team to ensure assets meet the strict polygon and texture budgets required for XR delivery.`;
+  }
+  if (role.includes('cinematic artist')) {
+    return `producing high-quality in-engine cinematic sequences for games or interactive media. Using Unreal Engine Sequencer or Unity Timeline, you will animate cameras, characters, and props, apply post-process effects, integrate rendered FX and audio, and export final cinematic clips for QA review. You will work from approved animatics and director's notes, iterate on camera composition, lighting mood, and performance timing, and deliver sequences that meet both visual and technical quality standards.`;
+  }
+
+  // ─── Art Direction / Leadership ──────────────────────────────────────────────
+  if (role.includes('art director')) {
+    return `leading the visual development and artistic quality of the studio's projects. Responsibilities include establishing and communicating the visual language through mood boards, colour palettes, and style guides; reviewing and approving assets from all art departments (character, environment, lighting, VFX) at each pipeline milestone; providing constructive written and verbal feedback; collaborating with Production to schedule art review cycles; and serving as the primary point of contact for client-facing visual decisions. You will mentor junior and mid-level artists and uphold the studio's standard of excellence across all deliverables.`;
+  }
+  if (role.includes('creative director')) {
+    return `overseeing the creative vision and strategic direction of the studio's projects from concept through delivery. Responsibilities include originating and pitching project concepts, guiding the Art Direction team in translating vision into executable production language, reviewing key deliverables at all major milestones, maintaining client relationships and presenting creative work at stakeholder reviews, and ensuring a consistent, high-quality artistic identity across all output. You will lead hiring and creative team development and drive the studio's creative culture forward.`;
+  }
+  if (role.includes('director') || role.includes('lead') || role.includes('creative')) {
+    return `leading and mentoring the team within your department, ensuring the highest quality of output is maintained across all assigned projects. Responsibilities include defining and communicating quality benchmarks, conducting regular asset or shot reviews, providing actionable feedback, collaborating cross-departmentally to resolve technical and creative blockers, and reporting production status to the Project Manager. You will also contribute directly to critical deliverables and help onboard new team members to the studio's standards and pipeline.`;
+  }
+
+  // ─── Production / Management ─────────────────────────────────────────────────
+  if (role.includes('production manager') || role.includes('production coordinator') || role.includes('coordinator')) {
+    return `managing production schedules, tracking deliverables, and coordinating communication between departments to keep projects on time and within scope. Responsibilities include building and maintaining production plans in ShotGrid, Jira, or Notion; running daily or weekly standups; tracking asset and shot status; managing client communication and feedback distribution; processing vendor and contractor agreements; and producing progress reports for studio leadership. You will identify risks early and implement mitigation strategies to protect delivery dates.`;
+  }
+  if (role.includes('asset manager')) {
+    return `overseeing the organisation, version control, and integrity of all digital assets throughout the production pipeline. Responsibilities include maintaining the asset management system (ShotGrid, ftrack, or equivalent), enforcing naming and folder conventions, auditing published assets for compliance with pipeline specifications, managing asset libraries and handover packages, and supporting artists with pipeline-related queries. You will produce asset status reports for production meetings and ensure clean asset handovers at each pipeline stage.`;
+  }
+  if (role.includes('hr') || role.includes('human resource')) {
+    return `supporting the studio's human resources operations, including recruitment coordination, onboarding administration, employee record management, leave tracking, policy compliance, and internal communications. You will assist with drafting job postings, scheduling interviews, preparing onboarding materials for new joiners, maintaining the leave management system, and coordinating team engagement activities. You will handle sensitive employee information with discretion and ensure compliance with applicable labour regulations.`;
+  }
+  if (role.includes('ui/ux') || role.includes('ui designer') || role.includes('ux designer')) {
+    return `designing intuitive and visually refined user interfaces for games, applications, or interactive media. Responsibilities include user research and persona mapping, wireframing and prototyping in Figma or Adobe XD, visual UI design (typography, colour systems, icon sets, layout grids), motion design for UI transitions, and handover of production-ready assets and design specifications to the development team. You will conduct usability testing sessions, analyse findings, and iterate designs based on player and user feedback.`;
+  }
+
+  // ─── General fallback ─────────────────────────────────────────────────────────
+  return `delivering professional, high-quality work aligned with the studio's active project requirements. This will include collaborating with the creative and production teams on assigned tasks, meeting agreed deadlines, maintaining organised and version-controlled project files, participating in regular review sessions, and performing any other duties reasonably required in connection with your role at Corvus Studio.`;
 }
 
 // â”€â”€â”€ CSS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -575,9 +699,9 @@ ${sigBlock()}`;
   return wrap(page1, p);
 }
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ══════════════════════════════════════════════════════════════════════
 // FREELANCER
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ══════════════════════════════════════════════════════════════════════
 function freelancer(p) {
   const page1 = `
 <div class="offer-title">FREELANCE ENGAGEMENT LETTER</div>
@@ -587,7 +711,7 @@ function freelancer(p) {
 <p>On behalf of <span class="co">Corvus Studio</span>, we are pleased to engage you as a <strong>${p.ROLE}</strong> on a project-based freelance basis, effective from <strong>${p.JOINING}</strong>. This letter formalises the terms of your engagement with the Studio.</p>
 <p>You will be engaged as an independent contractor and not as an employee of <span class="co">Corvus Studio</span>. This arrangement does not create an employer-employee relationship, and you will not be entitled to any employment benefits or statutory entitlements.</p>
 <p>Your remuneration for services rendered will be <strong>${p.STIPEND}</strong>, payable as mutually agreed upon completion of milestones or at the end of agreed billing cycles. Specific deliverables, timelines, and payment terms will be communicated on a project-by-project basis.</p>
-<p>Your scope of work will focus on <strong>${p.ROLE}</strong> responsibilities, including ${p.RESPONSIBILITIES}, along with any additional tasks assigned in connection with active studio projects.</p>
+<p>Your scope of work will focus on <strong>${p.ROLE}</strong> responsibilities. Specifically, you will be ${p.RESPONSIBILITIES}. You will also contribute to other tasks assigned in connection with active studio projects.</p>
 <p>You agree to maintain strict confidentiality with respect to all internal project materials, client assets, workflows, and proprietary studio information, both during and after your engagement.</p>
 <p>All deliverables and creative outputs produced in connection with <span class="co">Corvus Studio</span> projects shall be the sole and exclusive intellectual property of <span class="co">Corvus Studio</span> upon submission and payment.</p>
 <p>You may display publicly released and approved project work in your personal portfolio and professional profiles upon receiving written approval from <span class="co">Corvus Studio</span>.</p>
