@@ -101,7 +101,76 @@ export function buildPlaceholders(emp, docId, opts = {}) {
     LOCATION:  opts.workLocation || 'Remote',
     EMP_TYPE:  opts.employmentType || detectEmploymentType(emp.employee_type),
     MANAGER:   opts.reportingManager || 'the Reporting Manager',
+    RESPONSIBILITIES: getResponsibilitiesText(opts.jobRole || emp.designation || 'Team Member'),
   };
+}
+
+export function getResponsibilitiesText(roleName) {
+  const role = (roleName || '').toLowerCase();
+
+  if (role.includes('3d artist') || role.includes('3d generalist')) {
+    return 'creating high-quality 3D assets, including modeling, texturing, UV unwrapping, material mapping, basic rigging, lighting setups, and rendering to meet the visual standards of the production pipeline';
+  }
+  if (role.includes('character artist')) {
+    return 'developing high-fidelity 3D character models and organic sculpts, executing high-to-low poly baking, clean retopology, anatomy validation, realistic texture painting (skin, eyes, fabric), and hair card/groom generation';
+  }
+  if (role.includes('environment artist')) {
+    return 'designing and assembling modular environment assets, architectural layouts, organic terrains, foliage setups, set dressing, material blending, and world-building within real-time game engines or cinematic render engines';
+  }
+  if (role.includes('prop artist')) {
+    return 'modeling detailed hard-surface props, weapons, industrial elements, and mechanical systems, applying PBR texture painting, and optimizing topology and lod layouts for real-time and cinematic engines';
+  }
+  if (role.includes('texture') || role.includes('lookdev') || role.includes('look dev')) {
+    return 'creating advanced PBR materials and procedural texture maps (using Substance Painter/Designer or Mari), crafting look-development shader graphs, and validating visual response under multiple lighting rigs';
+  }
+  if (role.includes('rigging') || role.includes('rig')) {
+    return 'designing and constructing robust character skeleton rigs, facial rigging systems, mechanical control nodes, skin weight deformation setups, dynamic hair/cloth solvers, and scripting animation helper pipelines';
+  }
+  if (role.includes('groom')) {
+    return 'styling, styling, and simulating complex hair, fur, and feather grooms using industry-standard tools (XGen, Ornatrix, Houdini), setting up custom shading networks, and optimizing groom assets for render performance';
+  }
+  if (role.includes('animator') || role.includes('animation')) {
+    return 'authoring keyframe character animation, realistic creature locomotion, facial expressions, body mechanics, lip-sync tracks, and clean integration and refinement of raw motion capture data';
+  }
+  if (role.includes('motion graphics') || role.includes('mograph')) {
+    return 'designing and animating motion graphic elements, typographic sequences, logo resolves, UI animations, promotional video assets, and overlay assets to support broadcast, web, and internal campaigns';
+  }
+  if (role.includes('vfx artist') || role.includes('fx artist') || role.includes('vfx') || role.includes('fx')) {
+    return 'creating dynamic simulations including pyro (fire/smoke), fluid dynamics, destruction setups, particle effects, cloth and rigid-body simulations, rendering FX passes, and scripting simulation helpers';
+  }
+  if (role.includes('compositor') || role.includes('compositing')) {
+    return 'blending multiple render passes (CG, matte paintings, atmospheric elements) with live-action footage, executing precise color grading, camera tracking alignment, rotoscope masking, clean plate prep, and final grade output';
+  }
+  if (role.includes('roto') || role.includes('paint') || role.includes('matchmove')) {
+    return 'delivering accurate rotoscope masks, plate cleanup, wire removal, marker tracking, 3D camera tracking, distortion grid calibration, and layout matchmoving to align virtual elements with real-world plates';
+  }
+  if (role.includes('matte painter') || role.includes('matte painting')) {
+    return 'painting photorealistic digital matte backgrounds, skies, and environment extensions, set dressing layouts, and projecting paint layers onto 3D cards in compositing software';
+  }
+  if (role.includes('unreal') || role.includes('unity') || role.includes('game developer')) {
+    return 'assembling real-time levels, configuring dynamic lighting, setting up material shaders, scripting blueprint or C# game logic, performance optimization, and integrating virtual production and camera rigs';
+  }
+  if (role.includes('technical artist') || role.includes('tech artist')) {
+    return 'bridging art and programming pipelines, writing custom scripts/tools for DCC apps (Maya, Houdini, Blender), optimizing shader nodes, diagnosing performance bottlenecks, and maintaining technical pipeline specifications';
+  }
+  if (role.includes('concept artist')) {
+    return 'producing high-quality design work, including character turnarounds, environment mood boards, keyframe illustrations, weapon designs, and visual guides to establish the artistic tone of production';
+  }
+  if (role.includes('storyboard')) {
+    return 'illustrating sequence boards, narrative panels, and timing keys, mapping scene actions, camera moves, and expressions to represent script directions visually';
+  }
+  if (role.includes('video editor') || role.includes('editor')) {
+    return 'assembling project cuts, editing cinematic sequences and showreels, syncing audio assets, adjusting color grading profiles, and compiling finalized renders for internal review and public release';
+  }
+  if (role.includes('director') || role.includes('lead') || role.includes('creative')) {
+    return 'guiding the overall visual identity, artistic direction, and quality standard of projects, reviewing assets and shots, providing constructive feedback to artists, and communicating styling goals to stakeholders';
+  }
+  if (role.includes('coordinator') || role.includes('manager') || role.includes('production')) {
+    return 'organizing production schedules, tracking tasks and milestones (using ShotGrid/Jira), coordinating team meetings, managing client deliverables, and scheduling pipeline resource allocation';
+  }
+
+  // General fallback responsibilities
+  return 'executing professional duties, collaborating with the production and creative teams on ongoing projects, delivering assets that meet quality requirements, and performing other related tasks assigned in connection with the role';
 }
 
 // â”€â”€â”€ CSS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -464,10 +533,10 @@ function intern3d(p) {
 <div class="offer-sub">${p.ROLE} Internship</div>
 <div class="body">
 <p class="salutation">Dear <strong>${p.NAME}</strong>,</p>
-<p>On behalf of <span class="co">Corvus Studio</span>, we are pleased to offer you the position of <strong>${p.ROLE}</strong>, working remotely with our production team, effective from <strong>${p.JOINING}</strong>. This internship is intended to provide you with practical, production-oriented experience within our character art pipeline.</p>
+<p>On behalf of <span class="co">Corvus Studio</span>, we are pleased to offer you the position of <strong>${p.ROLE}</strong>, working remotely with our production team, effective from <strong>${p.JOINING}</strong>. This internship is intended to provide you with practical, production-oriented experience within our pipeline.</p>
 <p>This is an unpaid, portfolio-building internship for a period of <strong>${p.DURATION}</strong>, concluding on <strong>${p.END_DATE}</strong>, unless terminated earlier in accordance with the notice provision below. This engagement is a voluntary internship and does not constitute an offer of employment, a freelance engagement, or a volunteer programme. Nothing in this letter shall be construed as creating an employer-employee relationship between you and the Studio.</p>
 <p>You are expected to contribute approximately <strong>twenty (20) hours</strong> per week towards your responsibilities under this internship. Your schedule with the Studio will be arranged flexibly, based on mutual availability and the requirements of ongoing projects.</p>
-<p>Your responsibilities will include character modelling, sculpting, retopology, texturing, and asset development, along with contribution to internal studio projects and collaboration within the broader production pipeline, and any other related tasks reasonably assigned in connection with the role.</p>
+<p>Your responsibilities will focus on <strong>${p.ROLE}</strong> duties, including ${p.RESPONSIBILITIES}, along with contributions to assigned studio projects, and any other work requested in connection with your designation.</p>
 <p>As part of this internship, you may have access to internal assets, workflows, project concepts, and other proprietary materials. You are required to maintain strict confidentiality in respect of all such studio-related information, files, and materials, both during and after the internship, and must not share any of it externally without the Studio's prior written permission. Failure to comply may result in immediate termination of this engagement.</p>
 <p>All work, models, sculpts, textures, and other creative output produced by you in connection with <span class="co">Corvus Studio</span> projects during this internship shall remain the sole and exclusive property of <span class="co">Corvus Studio</span>, and may not be used, reproduced, or claimed by you, in whole or in part, without the Studio's prior written consent.</p>
 <p>Subject to prior written approval from <span class="co">Corvus Studio</span>, you may showcase approved and publicly released work in your personal portfolio, resume, and showreel, and on platforms such as ArtStation and LinkedIn.</p>
@@ -493,7 +562,7 @@ function internGeneric(p) {
 <p>On behalf of <span class="co">Corvus Studio</span>, we are pleased to offer you the position of <strong>${p.ROLE}</strong>, working remotely with our creative team, effective from <strong>${p.JOINING}</strong>. This internship is designed to provide you with hands-on, production-grade creative experience.</p>
 <p>This is an unpaid, portfolio-building internship for a duration of <strong>${p.DURATION}</strong>, concluding on <strong>${p.END_DATE}</strong>, unless terminated earlier per the notice terms below. This engagement is a voluntary internship and does not constitute an offer of employment, a freelance arrangement, or a paid creative contract.</p>
 <p>You are expected to dedicate approximately <strong>fifteen (15) to twenty (20) hours</strong> per week to your responsibilities. Your working hours will be agreed upon flexibly based on project requirements and mutual availability.</p>
-<p>Your responsibilities will include creative tasks aligned with your role as <strong>${p.ROLE}</strong>, contribution to studio projects, and any other tasks reasonably assigned in connection with your designation.</p>
+<p>Your responsibilities will focus on <strong>${p.ROLE}</strong> tasks, including ${p.RESPONSIBILITIES}, along with contribution to internal studio projects, and any other creative tasks assigned in connection with your designation.</p>
 <p>You will maintain strict confidentiality regarding all internal assets, project briefs, concepts, and proprietary materials accessed during this internship. Breach of confidentiality may result in immediate termination.</p>
 <p>All creative work produced during this internship in connection with <span class="co">Corvus Studio</span> projects is and shall remain the sole intellectual property of <span class="co">Corvus Studio</span>. You may not reproduce, claim, or distribute such work without prior written consent from the Studio.</p>
 <p>With prior written approval, you may feature publicly released and approved work in your personal portfolio, showreel, ArtStation, and LinkedIn profiles.</p>
@@ -518,7 +587,7 @@ function freelancer(p) {
 <p>On behalf of <span class="co">Corvus Studio</span>, we are pleased to engage you as a <strong>${p.ROLE}</strong> on a project-based freelance basis, effective from <strong>${p.JOINING}</strong>. This letter formalises the terms of your engagement with the Studio.</p>
 <p>You will be engaged as an independent contractor and not as an employee of <span class="co">Corvus Studio</span>. This arrangement does not create an employer-employee relationship, and you will not be entitled to any employment benefits or statutory entitlements.</p>
 <p>Your remuneration for services rendered will be <strong>${p.STIPEND}</strong>, payable as mutually agreed upon completion of milestones or at the end of agreed billing cycles. Specific deliverables, timelines, and payment terms will be communicated on a project-by-project basis.</p>
-<p>Your scope of work will include responsibilities pertaining to <strong>${p.ROLE}</strong> functions within the <strong>${p.DEPT}</strong> team, along with any additional tasks reasonably assigned in connection with active studio projects.</p>
+<p>Your scope of work will focus on <strong>${p.ROLE}</strong> responsibilities, including ${p.RESPONSIBILITIES}, along with any additional tasks assigned in connection with active studio projects.</p>
 <p>You agree to maintain strict confidentiality with respect to all internal project materials, client assets, workflows, and proprietary studio information, both during and after your engagement.</p>
 <p>All deliverables and creative outputs produced in connection with <span class="co">Corvus Studio</span> projects shall be the sole and exclusive intellectual property of <span class="co">Corvus Studio</span> upon submission and payment.</p>
 <p>You may display publicly released and approved project work in your personal portfolio and professional profiles upon receiving written approval from <span class="co">Corvus Studio</span>.</p>
@@ -541,7 +610,7 @@ function fulltime(p) {
 <p>On behalf of <span class="co">Corvus Studio</span>, we are delighted to extend this formal offer of employment for the position of <strong>${p.ROLE}</strong> within the <strong>${p.DEPT}</strong> team, effective from <strong>${p.JOINING}</strong>. You will be reporting to <strong>${p.MANAGER}</strong>.</p>
 <p>Your monthly compensation for this role will be <strong>${p.STIPEND}</strong>, payable in accordance with the Studio's standard payroll cycle. This offer is conditional upon the successful completion of any applicable background verification and onboarding documentation.</p>
 <p>Your work location will be <strong>${p.LOCATION}</strong>. Your standard working hours and schedule will be communicated separately by your reporting manager as part of the onboarding process.</p>
-<p>Your responsibilities will encompass the full scope of your designated role within the <strong>${p.DEPT}</strong> team, including cross-departmental collaboration and any other tasks reasonably assigned to you in connection with your designation.</p>
+<p>Your responsibilities will focus on <strong>${p.ROLE}</strong> duties, including ${p.RESPONSIBILITIES}, along with cross-departmental collaboration, and any other tasks assigned in connection with your designation.</p>
 <p>Your employment will begin with a probationary period of <strong>three (3) months</strong> from your date of joining. During this period, either party may terminate this engagement with a minimum notice of fifteen (15) days. Upon successful completion of probation, your employment will be confirmed in writing.</p>
 <p>You agree to maintain strict confidentiality regarding all proprietary studio information, client data, internal workflows, and any materials of a sensitive nature, both during and after the term of your employment.</p>
 <p>All work produced by you in the course of your employment shall be the sole intellectual property of <span class="co">Corvus Studio</span>.</p>
@@ -563,6 +632,7 @@ function contract(p) {
 <div class="body">
 <p class="salutation">Dear <strong>${p.NAME}</strong>,</p>
 <p>On behalf of <span class="co">Corvus Studio</span>, we are pleased to offer you a fixed-term contract engagement as <strong>${p.ROLE}</strong> within the <strong>${p.DEPT}</strong> team, commencing from <strong>${p.JOINING}</strong>. You will be reporting to <strong>${p.MANAGER}</strong>.</p>
+<p>Your scope of work under this contract will focus on <strong>${p.ROLE}</strong> responsibilities, including ${p.RESPONSIBILITIES}, along with any additional production tasks assigned in connection with active projects.</p>
 <p>Your engagement will be on a contractual basis for a defined project or duration to be communicated separately. This engagement does not constitute permanent employment with <span class="co">Corvus Studio</span>.</p>
 <p>Your compensation for this engagement will be <strong>${p.STIPEND}</strong>, payable as agreed upon achievement of defined milestones or at the end of the contract period.</p>
 <p>You are required to maintain the confidentiality of all proprietary materials, project files, client information, and internal assets accessed during this engagement.</p>
