@@ -149,11 +149,17 @@ html::-webkit-scrollbar, body::-webkit-scrollbar, *::-webkit-scrollbar {
   line-height: 1.2;
 }
 .header-tagline b { font-weight: 700; }
+.header-docid {
+  font-family: 'DM Sans', Arial, sans-serif;
+  font-size: 10pt;
+  color: #333;
+  margin-top: 4px;
+}
 .header-date {
   font-family: 'DM Sans', Arial, sans-serif;
   font-size: 10pt;
   color: #333;
-  margin-top: 5px;
+  margin-top: 2px;
 }
 .header-line {
   border: none;
@@ -288,7 +294,7 @@ html::-webkit-scrollbar, body::-webkit-scrollbar, *::-webkit-scrollbar {
 `;
 
 // â”€â”€â”€ Header Block (used on both pages) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-function headerBlock(date) {
+function headerBlock(date, docId) {
   return `
 <div class="top-stripe"></div>
 <div class="header">
@@ -297,6 +303,7 @@ function headerBlock(date) {
   </div>
   <div class="header-right">
     <div class="header-tagline">Motion that <b>Speaks.</b></div>
+    <div class="header-docid">${docId}</div>
     <div class="header-date">${date}</div>
   </div>
 </div>`;
@@ -314,7 +321,7 @@ function acceptancePage(p, note) {
   return `
 <div class="page-2">
   <img src="${LOGO_MARK}" class="wm" alt="">
-  ${headerBlock(p.DATE)}
+  ${headerBlock(p.DATE, p.DOC_ID)}
   <div class="content">
     <div class="acc-title">ACCEPTANCE</div>
     <div class="acc-body">
@@ -362,7 +369,7 @@ function wrap(page1Content, p) {
 <body>
 <div class="page">
   <img src="${LOGO_MARK}" class="wm" alt="">
-  ${headerBlock(p.DATE)}
+  ${headerBlock(p.DATE, p.DOC_ID)}
   <div class="content">
 ${page1Content}
   </div>
