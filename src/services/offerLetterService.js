@@ -82,7 +82,7 @@ html::-webkit-scrollbar, body::-webkit-scrollbar, *::-webkit-scrollbar {
 /* â”€â”€ Page Layout â”€â”€ */
 .page {
   width: 210mm;
-  height: 296mm;
+  height: 297mm;
   margin: 0 auto;
   position: relative;
   font-family: 'Times New Roman', Times, serif;
@@ -94,7 +94,7 @@ html::-webkit-scrollbar, body::-webkit-scrollbar, *::-webkit-scrollbar {
 }
 .page-2 {
   width: 210mm;
-  height: 296mm;
+  height: 297mm;
   margin: 0 auto;
   position: relative;
   font-family: 'Times New Roman', Times, serif;
