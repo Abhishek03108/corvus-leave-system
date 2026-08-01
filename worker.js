@@ -2101,13 +2101,24 @@ app.on('POST', ['/api/v1/admin/offer-letters/generate', '/admin/offer-letters/ge
     }
 
     const employmentType = detectEmploymentType(employee.employee_type);
-    const documentId = await generateDocumentId(c.env.DB);
 
-    // Store in offer_letters table to guarantee Document ID uniqueness
-    const createdBy = jwtUser?.userId || jwtUser?.id || null;
-    await c.env.DB.prepare(
-      `INSERT INTO offer_letters (document_id, employee_id, employment_type, created_by) VALUES (?, ?, ?, ?)`
-    ).bind(documentId, employee.id, employmentType, createdBy).run();
+    // Check if this employee already has a draft document ID — reuse it to avoid counter inflation on preview
+    const existingDraft = await c.env.DB.prepare(
+      `SELECT document_id FROM offer_letters WHERE employee_id = ? ORDER BY created_at DESC LIMIT 1`
+    ).bind(employee.id).first();
+
+    let documentId;
+    if (existingDraft && !body.force_new) {
+      // Reuse the existing document ID — do NOT increment the counter on every preview
+      documentId = existingDraft.document_id;
+    } else {
+      documentId = await generateDocumentId(c.env.DB);
+      // Store in offer_letters table to guarantee Document ID uniqueness
+      const createdBy = jwtUser?.userId || jwtUser?.id || null;
+      await c.env.DB.prepare(
+        `INSERT INTO offer_letters (document_id, employee_id, employment_type, created_by) VALUES (?, ?, ?, ?)`
+      ).bind(documentId, employee.id, employmentType, createdBy).run();
+    }
 
     // Generate authentic Corvus Studio offer letter based on role + employment type
     const documentHtml = generateOfferLetterHtml(employee, documentId, options || {});

@@ -90,7 +90,6 @@ html::-webkit-scrollbar, body::-webkit-scrollbar, *::-webkit-scrollbar {
   font-size: 11pt;
   background: #fff;
   overflow: hidden;
-  page-break-after: always;
   page-break-inside: avoid;
 }
 .page-2 {
