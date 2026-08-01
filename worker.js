@@ -2152,36 +2152,49 @@ app.on('POST', ['/api/v1/admin/offer-letters/send-email', '/admin/offer-letters/
     return c.json({ status: 'fail', message: 'Employee not found.' }, 404);
   }
 
-  const recipientEmail = employee.personal_email || employee.work_email;
+  const recipientEmail = employee.personal_email;
   if (!recipientEmail) {
-    return c.json({ status: 'fail', message: 'No valid recipient email address found for employee.' }, 400);
+    return c.json({ status: 'fail', message: 'No personal email address found for this employee. Please update their profile before sending.' }, 400);
   }
 
-  // CC to Raj, Yash, Nihar, and candidate's alternate email (if available)
-  const ccEmails = ['raj@thecorvusstudio.com', 'yash@thecorvusstudio.com', 'nihar@thecorvusstudio.com'];
-  if (employee.personal_email && employee.work_email) {
-    if (recipientEmail === employee.personal_email) {
-      ccEmails.push(employee.work_email);
-    } else {
-      ccEmails.push(employee.personal_email);
-    }
+  // CC: Corvus Official Email only if already assigned
+  const ccEmails = [];
+  if (employee.work_email) {
+    ccEmails.push(employee.work_email);
   }
+
+  // BCC: careers inbox (always)
+  const bccEmails = ['careers@thecorvusstudio.com'];
+
+  const jobRole = body.job_role || employee.designation || 'the offered position';
 
   const emailHtml = `
-    <div style="font-family: 'Helvetica Neue', Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f8fafc; padding: 30px;">
-      <div style="background-color: #ffffff; border-radius: 12px; padding: 30px; border: 1px solid #e2e8f0;">
-        <h2 style="color: #0f172a; margin-top: 0;">CORVUS STUDIO</h2>
-        <p style="color: #334155; font-size: 15px;">Dear ${employee.full_name},</p>
-        <p style="color: #475569; font-size: 14px; line-height: 1.6;">
-          Congratulations! We are delighted to share your official Employment Offer Letter (Ref: <strong>${document_id}</strong>) with Corvus Studio.
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f8fafc; padding: 30px;">
+      <div style="background-color: #ffffff; border-radius: 8px; padding: 32px; border: 1px solid #e2e8f0;">
+        <h2 style="color: #0f172a; margin-top: 0; font-size: 18px; letter-spacing: 0.5px;">THE CORVUS STUDIO</h2>
+        <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 16px 0 24px;" />
+        <p style="color: #1e293b; font-size: 15px; margin-bottom: 16px;">Dear ${employee.full_name},</p>
+        <p style="color: #334155; font-size: 14px; line-height: 1.7; margin-bottom: 16px;">
+          We are pleased to inform you that you have been selected for the position of <strong>${jobRole}</strong> at <strong>The Corvus Studio</strong>.
         </p>
-        <p style="color: #475569; font-size: 14px; line-height: 1.6;">
-          Please review the attached document for full details regarding your role, terms, and onboarding instructions.
+        <p style="color: #334155; font-size: 14px; line-height: 1.7; margin-bottom: 16px;">
+          Please find your Offer Letter attached to this email. Kindly review the document carefully, sign it, and send the signed copy back to
+          <a href="mailto:careers@thecorvusstudio.com" style="color: #0d6efd; text-decoration: none;">careers@thecorvusstudio.com</a> as confirmation of your acceptance.
         </p>
-        <p style="color: #475569; font-size: 14px; margin-top: 25px;">
-          Best regards,<br/>
-          <strong>HR & Leadership Team</strong><br/>
-          Corvus Studio
+        <p style="color: #334155; font-size: 14px; line-height: 1.7; margin-bottom: 16px;">
+          Once we receive the signed Offer Letter, we will share the remaining onboarding details, including your joining instructions and other formalities.
+        </p>
+        <p style="color: #334155; font-size: 14px; line-height: 1.7; margin-bottom: 24px;">
+          If you have any questions, please feel free to contact us.
+        </p>
+        <p style="color: #334155; font-size: 14px; line-height: 1.7; margin-bottom: 4px;">
+          We look forward to welcoming you to The Corvus Studio and wish you a successful journey with us.
+        </p>
+        <p style="color: #334155; font-size: 14px; margin-top: 24px;">
+          Best Regards,<br/>
+          <strong>HR Team</strong><br/>
+          The Corvus Studio<br/>
+          <a href="mailto:careers@thecorvusstudio.com" style="color: #0d6efd; text-decoration: none;">careers@thecorvusstudio.com</a>
         </p>
       </div>
     </div>
@@ -2196,15 +2209,16 @@ app.on('POST', ['/api/v1/admin/offer-letters/send-email', '/admin/offer-letters/
 
   await sendNotificationEmail(c.env.RESEND_API_KEY, {
     to: recipientEmail,
-    cc: ccEmails,
-    subject: `Official Offer Letter (${document_id}) - Corvus Studio`,
+    cc: ccEmails.length ? ccEmails : undefined,
+    bcc: bccEmails,
+    subject: `Offer of Employment – The Corvus Studio`,
     html: emailHtml,
     attachments
   });
 
   return c.json({
     status: 'success',
-    message: `Offer letter successfully emailed to ${recipientEmail} (CC: ${ccEmails.join(', ')}).`
+    message: `Offer letter emailed to ${recipientEmail}${ccEmails.length ? ` (CC: ${ccEmails.join(', ')})` : ''}.`
   });
 });
 

@@ -31,7 +31,20 @@ export function detectEmploymentType(str) {
   return 'Full-Time';
 }
 
-export function selectTemplate(emp) {
+export function selectTemplate(emp, opts = {}) {
+  // If options explicitly specify employment type, use that (priority over employee_type)
+  const optType = (opts.employmentType || '').toLowerCase();
+  if (optType === 'internship') {
+    const role = ((opts.jobRole || emp.designation || '') + ' ' + (emp.department || '')).toLowerCase();
+    if (role.includes('concept') || role.includes('2d') || role.includes('storyboard') || role.includes('production')) return 'intern_generic';
+    return 'intern_3d';
+  }
+  if (optType === 'freelance')  return 'freelancer';
+  if (optType === 'contract')   return 'contract';
+  if (optType === 'part-time' || optType === 'part time') return 'parttime';
+  if (optType === 'full-time' || optType === 'full time') return 'fulltime';
+
+  // Fallback: derive from employee_type field
   const type = detectEmploymentType(emp.employee_type);
   const role = ((emp.designation || '') + ' ' + (emp.department || '')).toLowerCase();
   if (type === 'Intern') {
@@ -46,17 +59,48 @@ export function selectTemplate(emp) {
 export function buildPlaceholders(emp, docId, opts = {}) {
   const today = () => new Date().toLocaleDateString('en-GB', { day:'2-digit', month:'long', year:'numeric' });
   const fmt = d => { try { return new Date(d).toLocaleDateString('en-GB', { day:'2-digit', month:'long', year:'numeric' }); } catch { return today(); } };
+
+  // Compute joining date: prefer opts override, then employee record
+  const joiningRaw = opts.joiningDate || emp.joining_date;
+  const joining = fmt(joiningRaw);
+
+  // Compute end date from joining date + duration if provided
+  let endDate = today();
+  if (opts.endDate) {
+    endDate = fmt(opts.endDate);
+  } else if (opts.durationValue && opts.durationUnit && joiningRaw) {
+    try {
+      const d = new Date(joiningRaw);
+      const val = parseInt(opts.durationValue, 10) || 1;
+      const unit = (opts.durationUnit || 'months').toLowerCase();
+      if (unit === 'days')   d.setDate(d.getDate() + val);
+      else if (unit === 'weeks')  d.setDate(d.getDate() + val * 7);
+      else if (unit === 'months') d.setMonth(d.getMonth() + val);
+      else if (unit === 'years')  d.setFullYear(d.getFullYear() + val);
+      endDate = d.toLocaleDateString('en-GB', { day:'2-digit', month:'long', year:'numeric' });
+    } catch { endDate = today(); }
+  } else if (joiningRaw) {
+    try { const d = new Date(joiningRaw); d.setMonth(d.getMonth()+4); endDate = d.toLocaleDateString('en-GB',{day:'2-digit',month:'long',year:'numeric'}); } catch { endDate = today(); }
+  }
+
+  // Duration label e.g. "3 Months"
+  const durationLabel = opts.durationValue && opts.durationUnit
+    ? `${opts.durationValue} ${opts.durationUnit.charAt(0).toUpperCase() + opts.durationUnit.slice(1)}`
+    : 'four (4) months';
+
   return {
-    DOC_ID:   docId,
-    DATE:     opts.issueDate || today(),
-    NAME:     emp.full_name   || '',
-    ROLE:     emp.designation || 'Team Member',
-    DEPT:     emp.department  || 'Production',
-    JOINING:  fmt(emp.joining_date),
-    END_DATE: (() => { try { const d = new Date(emp.joining_date); d.setMonth(d.getMonth()+4); return d.toLocaleDateString('en-GB',{day:'2-digit',month:'long',year:'numeric'}); } catch { return today(); } })(),
-    STIPEND:  opts.salary || emp.salary || 'unpaid',
-    LOCATION: opts.workLocation    || 'Remote',
-    MANAGER:  opts.reportingManager || 'Raj Kishore Kumar',
+    DOC_ID:    docId,
+    DATE:      opts.issueDate || today(),
+    NAME:      emp.full_name   || '',
+    ROLE:      opts.jobRole    || emp.designation || 'Team Member',
+    DEPT:      emp.department  || 'Production',
+    JOINING:   joining,
+    END_DATE:  endDate,
+    DURATION:  durationLabel,
+    STIPEND:   opts.salary || emp.salary || 'unpaid',
+    LOCATION:  opts.workLocation || 'Remote',
+    EMP_TYPE:  opts.employmentType || detectEmploymentType(emp.employee_type),
+    MANAGER:   opts.reportingManager || 'the Reporting Manager',
   };
 }
 
@@ -391,7 +435,7 @@ ${page1Content}
   </div>
   ${FOOTER}
 </div>
-${acceptancePage(p, 'I understand that this is a voluntary, unpaid internship for a duration of four (4) months and does not constitute an employment contract. Either party may conclude this engagement with the prior notice period mentioned above.')}
+${acceptancePage(p, `I understand and accept the terms outlined in this offer letter${p.DURATION && p.DURATION !== 'four (4) months' ? `, including the duration of ${p.DURATION}` : ''}. Either party may conclude this engagement with the prior notice period mentioned above.`)}
 </body>
 </html>`;
 }
@@ -421,7 +465,7 @@ function intern3d(p) {
 <div class="body">
 <p class="salutation">Dear <strong>${p.NAME}</strong>,</p>
 <p>On behalf of <span class="co">Corvus Studio</span>, we are pleased to offer you the position of <strong>${p.ROLE}</strong>, working remotely with our production team, effective from <strong>${p.JOINING}</strong>. This internship is intended to provide you with practical, production-oriented experience within our character art pipeline.</p>
-<p>This is an unpaid, portfolio-building internship for a period of four (4) months, concluding on <strong>${p.END_DATE}</strong>, unless terminated earlier in accordance with the notice provision below. This engagement is a voluntary internship and does not constitute an offer of employment, a freelance engagement, or a volunteer programme. Nothing in this letter shall be construed as creating an employer-employee relationship between you and the Studio.</p>
+<p>This is an unpaid, portfolio-building internship for a period of <strong>${p.DURATION}</strong>, concluding on <strong>${p.END_DATE}</strong>, unless terminated earlier in accordance with the notice provision below. This engagement is a voluntary internship and does not constitute an offer of employment, a freelance engagement, or a volunteer programme. Nothing in this letter shall be construed as creating an employer-employee relationship between you and the Studio.</p>
 <p>You are expected to contribute approximately <strong>twenty (20) hours</strong> per week towards your responsibilities under this internship. Your schedule with the Studio will be arranged flexibly, based on mutual availability and the requirements of ongoing projects.</p>
 <p>Your responsibilities will include character modelling, sculpting, retopology, texturing, and asset development, along with contribution to internal studio projects and collaboration within the broader production pipeline, and any other related tasks reasonably assigned in connection with the role.</p>
 <p>As part of this internship, you may have access to internal assets, workflows, project concepts, and other proprietary materials. You are required to maintain strict confidentiality in respect of all such studio-related information, files, and materials, both during and after the internship, and must not share any of it externally without the Studio's prior written permission. Failure to comply may result in immediate termination of this engagement.</p>
@@ -447,7 +491,7 @@ function internGeneric(p) {
 <div class="body">
 <p class="salutation">Dear <strong>${p.NAME}</strong>,</p>
 <p>On behalf of <span class="co">Corvus Studio</span>, we are pleased to offer you the position of <strong>${p.ROLE}</strong>, working remotely with our creative team, effective from <strong>${p.JOINING}</strong>. This internship is designed to provide you with hands-on, production-grade creative experience.</p>
-<p>This is an unpaid, portfolio-building internship for a duration of four (4) months, concluding on <strong>${p.END_DATE}</strong>, unless terminated earlier per the notice terms below. This engagement is a voluntary internship and does not constitute an offer of employment, a freelance arrangement, or a paid creative contract.</p>
+<p>This is an unpaid, portfolio-building internship for a duration of <strong>${p.DURATION}</strong>, concluding on <strong>${p.END_DATE}</strong>, unless terminated earlier per the notice terms below. This engagement is a voluntary internship and does not constitute an offer of employment, a freelance arrangement, or a paid creative contract.</p>
 <p>You are expected to dedicate approximately <strong>fifteen (15) to twenty (20) hours</strong> per week to your responsibilities. Your working hours will be agreed upon flexibly based on project requirements and mutual availability.</p>
 <p>Your responsibilities will include creative tasks aligned with your role as <strong>${p.ROLE}</strong>, contribution to studio projects, and any other tasks reasonably assigned in connection with your designation.</p>
 <p>You will maintain strict confidentiality regarding all internal assets, project briefs, concepts, and proprietary materials accessed during this internship. Breach of confidentiality may result in immediate termination.</p>
@@ -533,10 +577,11 @@ ${sigBlock()}`;
 // â”€â”€â”€ Main Export â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export function generateOfferLetterHtml(employee, documentId, options = {}) {
   const p = buildPlaceholders(employee, documentId, options);
-  switch (selectTemplate(employee)) {
+  switch (selectTemplate(employee, options)) {
     case 'intern_generic': return internGeneric(p);
     case 'freelancer':     return freelancer(p);
     case 'contract':       return contract(p);
+    case 'parttime':       return parttime(p);
     case 'fulltime':       return fulltime(p);
     default:               return intern3d(p);
   }
