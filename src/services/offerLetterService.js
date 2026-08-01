@@ -64,18 +64,20 @@ const CSS = `
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,700;1,400&display=swap');
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
-html, body { background: #fff; color: #1a1a1a; }
+html, body { background: #fff; color: #1a1a1a; margin: 0; padding: 0; }
 
 /* ── Page Layout ── */
-.page {
-  width: 794px; /* A4 at 96dpi */
-  min-height: 1123px;
+.page, .page-2 {
+  width: 210mm;
+  height: 297mm;
   margin: 0 auto;
-  padding: 0 0 60px 0;
   position: relative;
   font-family: 'Times New Roman', Times, serif;
   font-size: 11pt;
   background: #fff;
+  overflow: hidden;
+  page-break-after: always;
+  page-break-inside: avoid;
 }
 
 /* ── Top Stripe: grey bar + black square right ── */
@@ -99,23 +101,17 @@ html, body { background: #fff; color: #1a1a1a; }
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 14px 36px 10px 36px;
+  padding: 14px 48px 10px 48px;
 }
 .header-left {
   display: flex;
   align-items: center;
   gap: 10px;
 }
-.header-logo {
-  height: 68px; width: 68px;
+.header-logo-full {
+  height: 52px;
   object-fit: contain;
-}
-.header-studio {
-  font-family: 'DM Sans', Arial, sans-serif;
-  font-size: 17pt;
-  font-weight: 700;
-  color: #1a1a1a;
-  letter-spacing: 0.5px;
+  display: block;
 }
 .header-right {
   text-align: right;
@@ -137,7 +133,7 @@ html, body { background: #fff; color: #1a1a1a; }
 .header-line {
   border: none;
   border-top: 1px solid #888;
-  margin: 0 36px 14px 36px;
+  margin: 0 48px 14px 48px;
 }
 
 /* ── Watermark ── */
@@ -154,7 +150,7 @@ html, body { background: #fff; color: #1a1a1a; }
 
 /* ── Content body ── */
 .content {
-  padding: 0 36px;
+  padding: 0 48px;
   position: relative;
   z-index: 1;
 }
@@ -181,15 +177,15 @@ html, body { background: #fff; color: #1a1a1a; }
 /* ── Body ── */
 .body p {
   font-family: 'Times New Roman', serif;
-  font-size: 11pt;
-  line-height: 1.5;
+  font-size: 10.5pt;
+  line-height: 1.45;
   text-align: justify;
-  margin-bottom: 9px;
+  margin-bottom: 8px;
   color: #1a1a1a;
 }
 .body p.salutation {
   text-align: left;
-  margin-bottom: 9px;
+  margin-bottom: 8px;
 }
 .co { font-weight: bold; } /* Corvus Studio */
 
@@ -197,42 +193,33 @@ html, body { background: #fff; color: #1a1a1a; }
 .sig {
   margin-top: 10px;
   font-family: 'Times New Roman', serif;
-  font-size: 11pt;
+  font-size: 10.5pt;
 }
-.sig-gap { height: 36px; }
+.sig-gap { height: 32px; }
 .sig-line {
   width: 220px;
   border-top: 1px solid #1a1a1a;
   padding-top: 5px;
   margin-top: 0;
 }
-.sig-line p { font-size: 10.5pt; line-height: 1.5; }
+.sig-line p { font-size: 10pt; line-height: 1.4; }
 
 /* ── Footer (Black bg, white text — from real letterhead) ── */
 .footer {
-  position: fixed;
+  position: absolute;
   bottom: 0; left: 0; right: 0;
   background: #1a1a1a;
   color: #fff;
   text-align: center;
   font-family: 'Times New Roman', serif;
   font-size: 7.8pt;
-  padding: 6px 20px 7px;
+  padding: 8px 20px 9px;
   line-height: 1.6;
   z-index: 100;
 }
 .footer strong { font-size: 8.5pt; letter-spacing: 0.5px; }
 
 /* ── Page 2 (Acceptance) ── */
-.page-2 {
-  page-break-before: always;
-  width: 794px;
-  min-height: 1123px;
-  margin: 0 auto;
-  padding: 0 0 60px 0;
-  position: relative;
-  background: #fff;
-}
 .acc-title {
   text-align: center;
   font-family: 'Times New Roman', serif;
@@ -244,10 +231,10 @@ html, body { background: #fff; color: #1a1a1a; }
 }
 .acc-body p {
   font-family: 'Times New Roman', serif;
-  font-size: 11pt;
-  line-height: 1.5;
+  font-size: 10.5pt;
+  line-height: 1.45;
   text-align: justify;
-  margin-bottom: 9px;
+  margin-bottom: 8px;
 }
 .acc-field {
   display: flex;
@@ -255,7 +242,7 @@ html, body { background: #fff; color: #1a1a1a; }
   margin-bottom: 14px;
   gap: 8px;
   font-family: 'Times New Roman', serif;
-  font-size: 11pt;
+  font-size: 10.5pt;
 }
 .acc-field label { white-space: nowrap; min-width: 80px; }
 .field-line {
@@ -266,10 +253,12 @@ html, body { background: #fff; color: #1a1a1a; }
 }
 
 @media print {
-  html, body { margin: 0; padding: 0; }
-  .page, .page-2 { width: 100%; }
-  .footer { position: fixed; bottom: 0; left: 0; right: 0; }
-  .wm { position: absolute; }
+  html, body { margin: 0; padding: 0; width: 210mm; height: 297mm; }
+  .page, .page-2 { width: 210mm; height: 297mm; margin: 0; border: none; }
+  @page {
+    size: A4;
+    margin: 0;
+  }
 }
 `;
 
@@ -279,8 +268,7 @@ function headerBlock(date) {
 <div class="top-stripe"></div>
 <div class="header">
   <div class="header-left">
-    <img src="${LOGO_MARK}" class="header-logo" alt="Corvus Studio">
-    <span class="header-studio">CORVUS STUDIO</span>
+    <img src="${LOGO_FULL}" class="header-logo-full" alt="Corvus Studio">
   </div>
   <div class="header-right">
     <div class="header-tagline">Motion that <b>Speaks.</b></div>
@@ -334,6 +322,7 @@ function acceptancePage(p, note) {
       </div>
     </div>
   </div>
+  ${FOOTER}
 </div>`;
 }
 
@@ -347,13 +336,13 @@ function wrap(page1Content, p) {
 <style>${CSS}</style>
 </head>
 <body>
-${FOOTER}
 <div class="page">
   <img src="${LOGO_MARK}" class="wm" alt="">
   ${headerBlock(p.DATE)}
   <div class="content">
 ${page1Content}
   </div>
+  ${FOOTER}
 </div>
 ${acceptancePage(p, 'I understand that this is a voluntary, unpaid internship for a duration of four (4) months and does not constitute an employment contract. Either party may conclude this engagement with the prior notice period mentioned above.')}
 </body>

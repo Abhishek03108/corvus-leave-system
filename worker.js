@@ -2146,6 +2146,16 @@ app.on('POST', ['/api/v1/admin/offer-letters/send-email', '/admin/offer-letters/
     return c.json({ status: 'fail', message: 'No valid recipient email address found for employee.' }, 400);
   }
 
+  // CC to Raj, Yash, Nihar, and candidate's alternate email (if available)
+  const ccEmails = ['raj@thecorvusstudio.com', 'yash@thecorvusstudio.com', 'nihar@thecorvusstudio.com'];
+  if (employee.personal_email && employee.work_email) {
+    if (recipientEmail === employee.personal_email) {
+      ccEmails.push(employee.work_email);
+    } else {
+      ccEmails.push(employee.personal_email);
+    }
+  }
+
   const emailHtml = `
     <div style="font-family: 'Helvetica Neue', Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f8fafc; padding: 30px;">
       <div style="background-color: #ffffff; border-radius: 12px; padding: 30px; border: 1px solid #e2e8f0;">
@@ -2175,6 +2185,7 @@ app.on('POST', ['/api/v1/admin/offer-letters/send-email', '/admin/offer-letters/
 
   await sendNotificationEmail(c.env.RESEND_API_KEY, {
     to: recipientEmail,
+    cc: ccEmails,
     subject: `Official Offer Letter (${document_id}) - Corvus Studio`,
     html: emailHtml,
     attachments
@@ -2182,7 +2193,7 @@ app.on('POST', ['/api/v1/admin/offer-letters/send-email', '/admin/offer-letters/
 
   return c.json({
     status: 'success',
-    message: `Offer letter successfully emailed to ${recipientEmail}.`
+    message: `Offer letter successfully emailed to ${recipientEmail} (CC: ${ccEmails.join(', ')}).`
   });
 });
 
