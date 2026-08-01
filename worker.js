@@ -2095,34 +2095,59 @@ app.on('POST', ['/api/v1/admin/offer-letters/generate', '/admin/offer-letters/ge
       return c.json({ status: 'fail', message: 'employee_id is required.' }, 400);
     }
 
-    const employee = await c.env.DB.prepare('SELECT * FROM users WHERE id = ?').bind(employee_id).first();
-    if (!employee) {
-      return c.json({ status: 'fail', message: 'Employee not found.' }, 404);
+    const isNewCandidate = employee_id === 'new' || employee_id === 0 || String(employee_id) === '0' || String(employee_id) === 'new';
+    let employee;
+    if (isNewCandidate) {
+      employee = {
+        id: 0,
+        full_name: options?.candidateName || 'Candidate',
+        employee_type: options?.employmentType || 'Full-time',
+        personal_email: options?.personalEmail || '',
+        work_email: options?.workEmail || '',
+        designation: options?.jobRole || 'Artist',
+        department: options?.department || 'Production',
+        joining_date: options?.joiningDate || ''
+      };
+    } else {
+      employee = await c.env.DB.prepare('SELECT * FROM users WHERE id = ?').bind(employee_id).first();
+      if (!employee) {
+        return c.json({ status: 'fail', message: 'Employee not found.' }, 404);
+      }
     }
 
     const employmentType = detectEmploymentType(employee.employee_type);
 
-    // Check if this employee already has a draft document ID — reuse it to avoid counter inflation on preview
-    const existingDraft = await c.env.DB.prepare(
-      `SELECT document_id FROM offer_letters WHERE employee_id = ? ORDER BY generated_at DESC LIMIT 1`
-    ).bind(employee.id).first();
-
     let documentId;
-    if (existingDraft && !body.force_new) {
-      // Reuse the existing document ID — do NOT increment the counter on every preview
-      documentId = existingDraft.document_id;
+    if (body.document_id) {
+      documentId = body.document_id;
+    } else if (!isNewCandidate) {
+      // Check if this employee already has a draft document ID — reuse it to avoid counter inflation on preview
+      const existingDraft = await c.env.DB.prepare(
+        `SELECT document_id FROM offer_letters WHERE employee_id = ? ORDER BY generated_at DESC LIMIT 1`
+      ).bind(employee.id).first();
+
+      if (existingDraft && !body.force_new) {
+        documentId = existingDraft.document_id;
+      } else {
+        documentId = await generateDocumentId(c.env.DB);
+        // Store in offer_letters table to guarantee Document ID uniqueness
+        const createdBy = jwtUser?.userId || jwtUser?.id || null;
+        await c.env.DB.prepare(
+          `INSERT INTO offer_letters (document_id, employee_id, employment_type, created_by) VALUES (?, ?, ?, ?)`
+        ).bind(documentId, employee.id, employmentType, createdBy).run();
+      }
     } else {
+      // For new candidates (not in users table yet), we generate a new ID and insert employee_id as 0
       documentId = await generateDocumentId(c.env.DB);
-      // Store in offer_letters table to guarantee Document ID uniqueness
       const createdBy = jwtUser?.userId || jwtUser?.id || null;
       await c.env.DB.prepare(
-        `INSERT INTO offer_letters (document_id, employee_id, employment_type, created_by) VALUES (?, ?, ?, ?)`
-      ).bind(documentId, employee.id, employmentType, createdBy).run();
+        `INSERT INTO offer_letters (document_id, employee_id, employment_type, created_by) VALUES (?, 0, ?, ?)`
+      ).bind(documentId, employmentType, createdBy).run();
     }
 
     // Generate authentic Corvus Studio offer letter based on role + employment type
     const documentHtml = generateOfferLetterHtml(employee, documentId, options || {});
-    const templateUsed = selectTemplate(employee);
+    const templateUsed = selectTemplate(employee, options || {});
 
     return c.json({
       status: 'success',
@@ -2147,14 +2172,26 @@ app.on('POST', ['/api/v1/admin/offer-letters/send-email', '/admin/offer-letters/
     return c.json({ status: 'fail', message: 'employee_id and document_id are required.' }, 400);
   }
 
-  const employee = await c.env.DB.prepare('SELECT * FROM users WHERE id = ?').bind(employee_id).first();
-  if (!employee) {
-    return c.json({ status: 'fail', message: 'Employee not found.' }, 404);
+  const isNewCandidate = employee_id === 'new' || employee_id === 0 || String(employee_id) === '0' || String(employee_id) === 'new';
+  let employee;
+  if (isNewCandidate) {
+    employee = {
+      id: 0,
+      full_name: body.candidate_name || 'Candidate',
+      personal_email: body.personal_email || '',
+      work_email: body.work_email || '',
+      designation: body.job_role || 'Artist'
+    };
+  } else {
+    employee = await c.env.DB.prepare('SELECT * FROM users WHERE id = ?').bind(employee_id).first();
+    if (!employee) {
+      return c.json({ status: 'fail', message: 'Employee not found.' }, 404);
+    }
   }
 
   const recipientEmail = employee.personal_email;
   if (!recipientEmail) {
-    return c.json({ status: 'fail', message: 'No personal email address found for this employee. Please update their profile before sending.' }, 400);
+    return c.json({ status: 'fail', message: 'No personal email address found for this candidate. Please enter a valid personal email.' }, 400);
   }
 
   // CC: Corvus Official Email only if already assigned
