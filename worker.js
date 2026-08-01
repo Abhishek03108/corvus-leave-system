@@ -2,7 +2,7 @@ import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { signAccessToken, signRefreshToken, verifyToken } from './src/utils/jwt.js';
 import { auth, requireRole } from './src/middleware/auth.js';
-import { generateDocumentId, detectEmploymentType, buildPlaceholders, substitutePlaceholders } from './src/services/offerLetterService.js';
+import { generateDocumentId, detectEmploymentType, buildPlaceholders, generateOfferLetterHtml, selectTemplate } from './src/services/offerLetterService.js';
 
 const app = new Hono();
 
@@ -2107,85 +2107,16 @@ app.on('POST', ['/api/v1/admin/offer-letters/generate', '/admin/offer-letters/ge
     `INSERT INTO offer_letters (document_id, employee_id, employment_type, created_by) VALUES (?, ?, ?, ?)`
   ).bind(documentId, employee.id, employmentType, jwtUser.id).run();
 
-  const placeholders = buildPlaceholders(employee, documentId, options || {});
-
-  // Generate clean formatted document template
-  const documentHtml = `
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <meta charset="utf-8">
-      <title>Offer Letter - ${placeholders['{{Document ID}}']}</title>
-      <style>
-        body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #1e293b; margin: 0; padding: 40px; line-height: 1.6; }
-        .header { border-bottom: 2px solid #0f172a; padding-bottom: 20px; margin-bottom: 30px; display: flex; justify-content: space-between; align-items: flex-end; }
-        .logo-title { font-size: 24px; font-weight: 800; letter-spacing: 1px; color: #0f172a; }
-        .sub-title { font-size: 12px; color: #64748b; text-transform: uppercase; letter-spacing: 1.5px; }
-        .doc-meta { text-align: right; font-size: 13px; color: #475569; }
-        .doc-id { font-weight: 700; color: #0284c7; }
-        .section-title { font-size: 16px; font-weight: 700; color: #0f172a; margin-top: 25px; margin-bottom: 10px; border-bottom: 1px solid #e2e8f0; padding-bottom: 5px; }
-        .meta-table { width: 100%; border-collapse: collapse; margin: 20px 0; }
-        .meta-table td { padding: 8px 12px; border: 1px solid #e2e8f0; font-size: 14px; }
-        .meta-table td.label { font-weight: 600; background-color: #f8fafc; width: 35%; color: #334155; }
-        .content-body { font-size: 14px; margin-bottom: 30px; text-align: justify; }
-        .footer-signatures { margin-top: 60px; display: flex; justify-content: space-between; page-break-inside: avoid; }
-        .sig-box { width: 45%; text-align: center; border-top: 1px solid #cbd5e1; padding-top: 10px; font-size: 13px; font-weight: 600; color: #334155; }
-      </style>
-    </head>
-    <body>
-      <div class="header">
-        <div>
-          <div class="logo-title">CORVUS STUDIO</div>
-          <div class="sub-title">Official Employment Offer Letter</div>
-        </div>
-        <div class="doc-meta">
-          <div>Ref: <span class="doc-id">${placeholders['{{Document ID}}']}</span></div>
-          <div>Date: ${placeholders['{{Date}}']}</div>
-        </div>
-      </div>
-
-      <div class="content-body">
-        <p>Dear <strong>${placeholders['{{Employee Name}}']}</strong>,</p>
-
-        <p>On behalf of <strong>${placeholders['{{Company Name}}']}</strong>, we are pleased to offer you the position of <strong>${placeholders['{{Designation}}']}</strong> within our <strong>${placeholders['{{Department}}']}</strong> department. Your employment classification will be <strong>${placeholders['{{Employment Type}}']}</strong>.</p>
-
-        <div class="section-title">Employment Overview</div>
-        <table class="meta-table">
-          <tr><td class="label">Candidate Name</td><td>${placeholders['{{Employee Name}}']}</td></tr>
-          <tr><td class="label">Designation</td><td>${placeholders['{{Designation}}']}</td></tr>
-          <tr><td class="label">Department</td><td>${placeholders['{{Department}}']}</td></tr>
-          <tr><td class="label">Employment Category</td><td>${placeholders['{{Employment Type}}']}</td></tr>
-          <tr><td class="label">Joining Date</td><td>${placeholders['{{Joining Date}}']}</td></tr>
-          <tr><td class="label">Remuneration / Stipend</td><td>${placeholders['{{Salary}}']}</td></tr>
-          <tr><td class="label">Work Location</td><td>${placeholders['{{Work Location}}']}</td></tr>
-          <tr><td class="label">Reporting Manager</td><td>${placeholders['{{Reporting Manager}}']}</td></tr>
-        </table>
-
-        <p>We are confident that your expertise and background will make valuable contributions to our team. Please review the offer summary above and sign below to indicate your acceptance.</p>
-
-        <p>Welcome aboard!</p>
-      </div>
-
-      <div class="footer-signatures">
-        <div class="sig-box">
-          <div>Authorized Signatory</div>
-          <div style="font-weight: 400; color: #64748b;">${placeholders['{{Company Name}}']}</div>
-        </div>
-        <div class="sig-box">
-          <div>Candidate Signature</div>
-          <div style="font-weight: 400; color: #64748b;">${placeholders['{{Employee Name}}']}</div>
-        </div>
-      </div>
-    </body>
-    </html>
-  `;
+  // Generate authentic Corvus Studio offer letter based on role + employment type
+  const documentHtml = generateOfferLetterHtml(employee, documentId, options || {});
+  const templateUsed = selectTemplate(employee);
 
   return c.json({
     status: 'success',
     data: {
       document_id: documentId,
       employment_type: employmentType,
-      placeholders,
+      template_used: templateUsed,
       html_content: documentHtml
     }
   });
