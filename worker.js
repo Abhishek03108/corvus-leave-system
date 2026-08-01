@@ -2086,40 +2086,46 @@ app.on('GET', ['/api/v1/analytics/monthly', '/analytics/monthly'], auth, async (
 });
 
 app.on('POST', ['/api/v1/admin/offer-letters/generate', '/admin/offer-letters/generate'], auth, requireRole('admin'), async (c) => {
-  const jwtUser = c.get('user');
-  const body = await c.req.json().catch(() => ({}));
-  const { employee_id, options } = body;
+  try {
+    const jwtUser = c.get('user');
+    const body = await c.req.json().catch(() => ({}));
+    const { employee_id, options } = body;
 
-  if (!employee_id) {
-    return c.json({ status: 'fail', message: 'employee_id is required.' }, 400);
-  }
-
-  const employee = await c.env.DB.prepare('SELECT * FROM users WHERE id = ?').bind(employee_id).first();
-  if (!employee) {
-    return c.json({ status: 'fail', message: 'Employee not found.' }, 404);
-  }
-
-  const employmentType = detectEmploymentType(employee.employee_type);
-  const documentId = await generateDocumentId(c.env.DB);
-
-  // Store in offer_letters table to guarantee Document ID uniqueness
-  await c.env.DB.prepare(
-    `INSERT INTO offer_letters (document_id, employee_id, employment_type, created_by) VALUES (?, ?, ?, ?)`
-  ).bind(documentId, employee.id, employmentType, jwtUser.id).run();
-
-  // Generate authentic Corvus Studio offer letter based on role + employment type
-  const documentHtml = generateOfferLetterHtml(employee, documentId, options || {});
-  const templateUsed = selectTemplate(employee);
-
-  return c.json({
-    status: 'success',
-    data: {
-      document_id: documentId,
-      employment_type: employmentType,
-      template_used: templateUsed,
-      html_content: documentHtml
+    if (!employee_id) {
+      return c.json({ status: 'fail', message: 'employee_id is required.' }, 400);
     }
-  });
+
+    const employee = await c.env.DB.prepare('SELECT * FROM users WHERE id = ?').bind(employee_id).first();
+    if (!employee) {
+      return c.json({ status: 'fail', message: 'Employee not found.' }, 404);
+    }
+
+    const employmentType = detectEmploymentType(employee.employee_type);
+    const documentId = await generateDocumentId(c.env.DB);
+
+    // Store in offer_letters table to guarantee Document ID uniqueness
+    const createdBy = jwtUser?.userId || jwtUser?.id || null;
+    await c.env.DB.prepare(
+      `INSERT INTO offer_letters (document_id, employee_id, employment_type, created_by) VALUES (?, ?, ?, ?)`
+    ).bind(documentId, employee.id, employmentType, createdBy).run();
+
+    // Generate authentic Corvus Studio offer letter based on role + employment type
+    const documentHtml = generateOfferLetterHtml(employee, documentId, options || {});
+    const templateUsed = selectTemplate(employee);
+
+    return c.json({
+      status: 'success',
+      data: {
+        document_id: documentId,
+        employment_type: employmentType,
+        template_used: templateUsed,
+        html_content: documentHtml
+      }
+    });
+  } catch (err) {
+    console.error('[offer-letter-generate]', err);
+    return c.json({ status: 'fail', message: err?.message || 'Internal server error generating offer letter.' }, 500);
+  }
 });
 
 app.on('POST', ['/api/v1/admin/offer-letters/send-email', '/admin/offer-letters/send-email'], auth, requireRole('admin'), async (c) => {
