@@ -64,7 +64,20 @@ const CSS = `
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,700;1,400&display=swap');
 
 * { box-sizing: border-box; margin: 0; padding: 0; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-html, body { background: #fff; color: #1a1a1a; margin: 0; padding: 0; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+html, body {
+  background: #fff;
+  color: #1a1a1a;
+  width: 210mm;
+  margin: 0 auto;
+  padding: 0;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+  -webkit-print-color-adjust: exact !important;
+  print-color-adjust: exact !important;
+}
+html::-webkit-scrollbar, body::-webkit-scrollbar, *::-webkit-scrollbar {
+  display: none;
+}
 
 /* â”€â”€ Page Layout â”€â”€ */
 .page {
