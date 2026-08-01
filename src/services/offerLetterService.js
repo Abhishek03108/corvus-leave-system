@@ -126,7 +126,7 @@ html::-webkit-scrollbar, body::-webkit-scrollbar, *::-webkit-scrollbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 14px 48px 24px 48px;
+  padding: 14px 48px 14px 48px;
 }
 .header-left {
   display: flex;
@@ -165,7 +165,7 @@ html::-webkit-scrollbar, body::-webkit-scrollbar, *::-webkit-scrollbar {
 .header-line {
   border: none;
   border-top: 1px solid #888;
-  margin: 0 48px 14px 48px;
+  margin: 0 48px 8px 48px;
 }
 
 /* â”€â”€ Watermark â”€â”€ */
@@ -203,7 +203,7 @@ html::-webkit-scrollbar, body::-webkit-scrollbar, *::-webkit-scrollbar {
   font-size: 10.5pt;
   font-style: italic;
   color: #333;
-  margin-bottom: 14px;
+  margin-bottom: 8px;
 }
 
 /* â”€â”€ Body â”€â”€ */
@@ -212,12 +212,12 @@ html::-webkit-scrollbar, body::-webkit-scrollbar, *::-webkit-scrollbar {
   font-size: 10.5pt;
   line-height: 1.45;
   text-align: justify;
-  margin-bottom: 8px;
+  margin-bottom: 4px;
   color: #1a1a1a;
 }
 .body p.salutation {
   text-align: left;
-  margin-bottom: 8px;
+  margin-bottom: 4px;
 }
 .co { font-weight: bold; } /* Corvus Studio */
 
