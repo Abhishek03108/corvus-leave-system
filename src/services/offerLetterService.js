@@ -229,13 +229,14 @@ html::-webkit-scrollbar, body::-webkit-scrollbar, *::-webkit-scrollbar {
 }
 .sig-gap { height: 32px; }
 .sig-image-container {
-  height: 32px;
+  height: 48px;
   position: relative;
+  margin-top: 6px;
 }
 .sig-image {
   height: 52px;
   position: absolute;
-  bottom: -10px;
+  bottom: -8px;
   left: 24px;
   width: auto;
   object-fit: contain;
