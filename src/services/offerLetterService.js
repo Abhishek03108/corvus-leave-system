@@ -63,8 +63,8 @@ export function buildPlaceholders(emp, docId, opts = {}) {
 const CSS = `
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,700;1,400&display=swap');
 
-* { box-sizing: border-box; margin: 0; padding: 0; }
-html, body { background: #fff; color: #1a1a1a; margin: 0; padding: 0; }
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+html, body { background: #fff; color: #1a1a1a; margin: 0; padding: 0; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
 
 /* ── Page Layout ── */
 .page, .page-2 {
@@ -253,8 +253,8 @@ html, body { background: #fff; color: #1a1a1a; margin: 0; padding: 0; }
 }
 
 @media print {
-  html, body { margin: 0; padding: 0; width: 210mm; height: 297mm; }
-  .page, .page-2 { width: 210mm; height: 297mm; margin: 0; border: none; }
+  html, body { margin: 0; padding: 0; width: 210mm; height: 297mm; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+  .page, .page-2 { width: 210mm; height: 297mm; margin: 0; border: none; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
   @page {
     size: A4;
     margin: 0;
