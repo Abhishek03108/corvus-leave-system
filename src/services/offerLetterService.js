@@ -101,7 +101,7 @@ html, body { background: #fff; color: #1a1a1a; margin: 0; padding: 0; -webkit-pr
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 14px 48px 10px 48px;
+  padding: 14px 48px 24px 48px;
 }
 .header-left {
   display: flex;
@@ -109,7 +109,8 @@ html, body { background: #fff; color: #1a1a1a; margin: 0; padding: 0; -webkit-pr
   gap: 10px;
 }
 .header-logo-full {
-  height: 52px;
+  height: 85px;
+  width: auto;
   object-fit: contain;
   display: block;
 }
@@ -274,8 +275,7 @@ function headerBlock(date) {
     <div class="header-tagline">Motion that <b>Speaks.</b></div>
     <div class="header-date">${date}</div>
   </div>
-</div>
-<hr class="header-line">`;
+</div>`;
 }
 
 // â”€â”€â”€ Footer Block â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
