@@ -963,7 +963,7 @@ app.on('POST', ['/api/v1/auth/verify-otp', '/auth/verify-otp'], async (c) => {
   await c.env.DB.prepare(`DELETE FROM otp_codes WHERE email = ?`).bind(email).run();
 
   const user = await c.env.DB.prepare(
-    `SELECT id, full_name, work_email, role, designation, department, employee_type, joining_date, dob,
+    `SELECT id, full_name, work_email, role, designation, department, employee_type, joining_date, dob, gender,
             can_approve_leaves, can_add_employee, can_remove_employee
      FROM users WHERE work_email = ? LIMIT 1`
   ).bind(email).first();
@@ -999,6 +999,7 @@ app.on('POST', ['/api/v1/auth/verify-otp', '/auth/verify-otp'], async (c) => {
       employeeType: user.employee_type,
       joiningDate: user.joining_date,
       dob: user.dob,
+      gender: user.gender,
       canApproveLeaves: user.can_approve_leaves === 1,
       canAddEmployee: user.can_add_employee === 1,
       canRemoveEmployee: user.can_remove_employee === 1
@@ -1064,7 +1065,7 @@ app.on('POST', ['/api/v1/auth/logout', '/auth/logout'], auth, async (c) => {
 app.on('GET', ['/api/v1/auth/me', '/auth/me'], auth, async (c) => {
   const jwtUser = c.get('user');
   const user = await c.env.DB.prepare(
-    `SELECT id, full_name, work_email, role, designation, department, employee_type, joining_date, dob, contact_number,
+    `SELECT id, full_name, work_email, role, designation, department, employee_type, joining_date, dob, contact_number, gender,
             can_approve_leaves, can_add_employee, can_remove_employee
      FROM users WHERE id = ? LIMIT 1`
   ).bind(jwtUser.userId).first();
@@ -1084,6 +1085,7 @@ app.on('GET', ['/api/v1/auth/me', '/auth/me'], auth, async (c) => {
       joiningDate: user.joining_date,
       dob: user.dob,
       contactNumber: user.contact_number,
+      gender: user.gender,
       canApproveLeaves: user.can_approve_leaves === 1,
       canAddEmployee: user.can_add_employee === 1,
       canRemoveEmployee: user.can_remove_employee === 1
@@ -1096,7 +1098,7 @@ app.on('GET', ['/api/v1/auth/me', '/auth/me'], auth, async (c) => {
 app.on('GET', ['/api/v1/user/profile', '/user/profile'], auth, async (c) => {
   const jwtUser = c.get('user');
   const user = await c.env.DB.prepare(
-    `SELECT id, full_name, work_email, role, designation, department, employee_type, joining_date, dob, contact_number, profile_image,
+    `SELECT id, full_name, work_email, role, designation, department, employee_type, joining_date, dob, contact_number, profile_image, gender,
             can_approve_leaves, can_manage_documents, can_manage_roles
      FROM users WHERE id = ? LIMIT 1`
   ).bind(jwtUser.userId).first();
@@ -1117,6 +1119,7 @@ app.on('GET', ['/api/v1/user/profile', '/user/profile'], auth, async (c) => {
       dob: user.dob,
       contactNumber: user.contact_number,
       profileImage: user.profile_image,
+      gender: user.gender,
       canApproveLeaves: user.can_approve_leaves === 1,
       canManageDocuments: user.can_manage_documents === 1,
       canManageRoles: user.can_manage_roles === 1,
@@ -1139,7 +1142,7 @@ app.on('PATCH', ['/api/v1/user/profile', '/user/profile'], auth, async (c) => {
 
 app.on('GET', ['/api/v1/user/list', '/user/list'], auth, async (c) => {
   const usersResult = await c.env.DB.prepare(
-    `SELECT id, full_name, work_email, personal_email, role, status, designation, department, employee_type, joining_date, dob, contact_number,
+    `SELECT id, full_name, work_email, personal_email, role, status, designation, department, employee_type, joining_date, dob, contact_number, gender,
             can_approve_leaves, can_manage_documents, can_manage_roles
      FROM users WHERE status = 'active' ORDER BY full_name ASC`
   ).all();
@@ -1177,6 +1180,7 @@ app.on('GET', ['/api/v1/user/list', '/user/list'], auth, async (c) => {
       joiningDate: u.joining_date,
       dob: u.dob,
       contactNumber: u.contact_number,
+      gender: u.gender,
       canApproveLeaves: u.can_approve_leaves === 1,
       canManageDocuments: u.can_manage_documents === 1,
       canManageRoles: u.can_manage_roles === 1,
@@ -1187,7 +1191,7 @@ app.on('GET', ['/api/v1/user/list', '/user/list'], auth, async (c) => {
 
 app.on('GET', ['/api/v1/admin/employees/ex', '/admin/employees/ex'], auth, async (c) => {
   const usersResult = await c.env.DB.prepare(
-    `SELECT id, full_name, work_email, role, status, designation, department, employee_type, joining_date, dob, contact_number, personal_email, leaving_date, leaving_reason
+    `SELECT id, full_name, work_email, role, status, designation, department, employee_type, joining_date, dob, contact_number, personal_email, leaving_date, leaving_reason, gender
      FROM users WHERE status = 'inactive' ORDER BY leaving_date DESC, full_name ASC`
   ).all();
 
@@ -1207,7 +1211,8 @@ app.on('GET', ['/api/v1/admin/employees/ex', '/admin/employees/ex'], auth, async
       contactNumber: u.contact_number,
       personalEmail: u.personal_email,
       leavingDate: u.leaving_date,
-      leavingReason: u.leaving_reason
+      leavingReason: u.leaving_reason,
+      gender: u.gender
     }))
   });
 });
@@ -1711,7 +1716,7 @@ app.on('GET', ['/api/v1/admin/audit-logs', '/admin/audit-logs'], auth, requireRo
 app.on('POST', ['/api/v1/admin/employee', '/admin/employee'], auth, requireRole('admin'), async (c) => {
   const jwtUser = c.get('user');
   const body    = await c.req.json().catch(() => ({}));
-  const { fullName, workEmail, role, designation, department, employeeType, joiningDate, contactNumber, personalEmail } = body;
+  const { fullName, workEmail, role, designation, department, employeeType, joiningDate, contactNumber, personalEmail, gender } = body;
 
   const caller = await c.env.DB.prepare(`SELECT work_email, can_add_employee FROM users WHERE id = ? LIMIT 1`).bind(jwtUser.userId).first();
   if (!caller) return c.json({ status: 'fail', message: 'User not found.' }, 404);
@@ -1734,6 +1739,11 @@ app.on('POST', ['/api/v1/admin/employee', '/admin/employee'], auth, requireRole(
     return c.json({ status: 'fail', message: 'Invalid role value.' }, 400);
   }
 
+  const allowedGenders = ['Male', 'Female', 'Other'];
+  if (gender !== undefined && gender !== null && !allowedGenders.includes(gender)) {
+    return c.json({ status: 'fail', message: 'Invalid gender value.' }, 400);
+  }
+
   const normalizedEmail = workEmail.toLowerCase().trim();
   if (!normalizedEmail.endsWith('@thecorvusstudio.com')) {
     return c.json({ status: 'fail', message: 'Access restricted to @thecorvusstudio.com domains.' }, 400);
@@ -1748,10 +1758,10 @@ app.on('POST', ['/api/v1/admin/employee', '/admin/employee'], auth, requireRole(
   }
 
   const result = await c.env.DB.prepare(
-    `INSERT INTO users (full_name, work_email, role, status, designation, department, employee_type, joining_date, contact_number, personal_email)
-     VALUES (?, ?, ?, 'active', ?, ?, ?, ?, ?, ?)`
+    `INSERT INTO users (full_name, work_email, role, status, designation, department, employee_type, joining_date, contact_number, personal_email, gender)
+     VALUES (?, ?, ?, 'active', ?, ?, ?, ?, ?, ?, ?)`
   ).bind(fullName, normalizedEmail, role, designation || null, department || null,
-         employeeType || 'Full Time', joiningDate || null, contactNumber || null, personalEmail || null).run();
+         employeeType || 'Full Time', joiningDate || null, contactNumber || null, personalEmail || null, gender || 'Male').run();
 
   const newUserId = result.meta.last_row_id;
   await c.env.DB.prepare(
@@ -1826,7 +1836,7 @@ app.on('PATCH', ['/api/v1/admin/employee/:id', '/admin/employee/:id'], auth, req
   const id      = c.req.param('id');
   const body    = await c.req.json().catch(() => ({}));
   const { 
-    fullName, role, designation, department, employeeType, joiningDate, contactNumber, status, personalEmail, dob,
+    fullName, role, designation, department, employeeType, joiningDate, contactNumber, status, personalEmail, dob, gender,
     canApproveLeaves, canManageDocuments, canManageRoles
   } = body;
 
@@ -1870,6 +1880,10 @@ app.on('PATCH', ['/api/v1/admin/employee/:id', '/admin/employee/:id'], auth, req
   if (status !== undefined && !allowedStatuses.includes(status)) {
     return c.json({ status: 'fail', message: 'Invalid status value.' }, 400);
   }
+  const allowedGenders = ['Male', 'Female', 'Other'];
+  if (gender !== undefined && gender !== null && !allowedGenders.includes(gender)) {
+    return c.json({ status: 'fail', message: 'Invalid gender value.' }, 400);
+  }
 
   let query = 'UPDATE users SET ';
   const params = [];
@@ -1885,6 +1899,7 @@ app.on('PATCH', ['/api/v1/admin/employee/:id', '/admin/employee/:id'], auth, req
   if (status !== undefined) { updates.push('status = ?'); params.push(status); }
   if (personalEmail !== undefined) { updates.push('personal_email = ?'); params.push(personalEmail || null); }
   if (dob !== undefined) { updates.push('dob = ?'); params.push(dob || null); }
+  if (gender !== undefined) { updates.push('gender = ?'); params.push(gender || 'Male'); }
 
   if (canApproveLeaves !== undefined) { updates.push('can_approve_leaves = ?'); params.push(canApproveLeaves ? 1 : 0); }
   if (canManageDocuments !== undefined) { updates.push('can_manage_documents = ?'); params.push(canManageDocuments ? 1 : 0); }
@@ -1906,7 +1921,7 @@ app.on('PATCH', ['/api/v1/admin/employee/:id', '/admin/employee/:id'], auth, req
   ).bind('EMPLOYEE_UPDATED', numericUserId, numericId, `Updated employee #${numericId}`).run();
 
   const updatedEmployee = await c.env.DB.prepare(
-    `SELECT id, full_name as fullName, work_email as workEmail, role, designation, department, employee_type as employeeType, joining_date as joiningDate, dob, contact_number as contactNumber, personal_email as personalEmail, status,
+    `SELECT id, full_name as fullName, work_email as workEmail, role, designation, department, employee_type as employeeType, joining_date as joiningDate, dob, contact_number as contactNumber, personal_email as personalEmail, status, gender,
             can_approve_leaves as canApproveLeaves, can_manage_documents as canManageDocuments, can_manage_roles as canManageRoles
      FROM users WHERE id = ? LIMIT 1`
   ).bind(numericId).first();
