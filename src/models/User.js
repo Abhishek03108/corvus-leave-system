@@ -85,6 +85,24 @@ const User = sequelize.define('User', {
     defaultValue: 'active',
     allowNull: false,
   },
+  canApproveLeaves: {
+    type: DataTypes.INTEGER,
+    defaultValue: 0,
+    allowNull: false,
+    field: 'can_approve_leaves',
+  },
+  canManageDocuments: {
+    type: DataTypes.INTEGER,
+    defaultValue: 0,
+    allowNull: false,
+    field: 'can_manage_documents',
+  },
+  canManageRoles: {
+    type: DataTypes.INTEGER,
+    defaultValue: 0,
+    allowNull: false,
+    field: 'can_manage_roles',
+  },
 }, {
   tableName: 'users',
   timestamps: true,

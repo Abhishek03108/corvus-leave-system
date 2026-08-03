@@ -55,7 +55,8 @@ export const updateEmployee = async (adminId, employeeId, data, ipAddress) => {
     throw new NotFoundError('Employee not found.');
   }
 
-  const { fullName, designation, department, employeeType, status, role, contactNumber, location, personalEmail, dob, joiningDate } = data;
+  const { fullName, designation, department, employeeType, status, role, contactNumber, location, personalEmail, dob, joiningDate,
+          canApproveLeaves, canManageDocuments, canManageRoles } = data;
 
   user.fullName = fullName !== undefined ? fullName : user.fullName;
   user.designation = designation !== undefined ? designation : user.designation;
@@ -68,6 +69,10 @@ export const updateEmployee = async (adminId, employeeId, data, ipAddress) => {
   user.personalEmail = personalEmail !== undefined ? personalEmail : user.personalEmail;
   user.dob = dob !== undefined ? dob : user.dob;
   user.joiningDate = joiningDate !== undefined ? joiningDate : user.joiningDate;
+
+  user.canApproveLeaves = canApproveLeaves !== undefined ? (canApproveLeaves ? 1 : 0) : user.canApproveLeaves;
+  user.canManageDocuments = canManageDocuments !== undefined ? (canManageDocuments ? 1 : 0) : user.canManageDocuments;
+  user.canManageRoles = canManageRoles !== undefined ? (canManageRoles ? 1 : 0) : user.canManageRoles;
 
   await user.save();
 

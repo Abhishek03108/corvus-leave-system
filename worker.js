@@ -1096,7 +1096,8 @@ app.on('GET', ['/api/v1/auth/me', '/auth/me'], auth, async (c) => {
 app.on('GET', ['/api/v1/user/profile', '/user/profile'], auth, async (c) => {
   const jwtUser = c.get('user');
   const user = await c.env.DB.prepare(
-    `SELECT id, full_name, work_email, role, designation, department, employee_type, joining_date, dob, contact_number, profile_image
+    `SELECT id, full_name, work_email, role, designation, department, employee_type, joining_date, dob, contact_number, profile_image,
+            can_approve_leaves, can_manage_documents, can_manage_roles
      FROM users WHERE id = ? LIMIT 1`
   ).bind(jwtUser.userId).first();
 
@@ -1116,6 +1117,9 @@ app.on('GET', ['/api/v1/user/profile', '/user/profile'], auth, async (c) => {
       dob: user.dob,
       contactNumber: user.contact_number,
       profileImage: user.profile_image,
+      canApproveLeaves: user.can_approve_leaves === 1,
+      canManageDocuments: user.can_manage_documents === 1,
+      canManageRoles: user.can_manage_roles === 1,
     },
   });
 });
@@ -1136,7 +1140,7 @@ app.on('PATCH', ['/api/v1/user/profile', '/user/profile'], auth, async (c) => {
 app.on('GET', ['/api/v1/user/list', '/user/list'], auth, async (c) => {
   const usersResult = await c.env.DB.prepare(
     `SELECT id, full_name, work_email, personal_email, role, status, designation, department, employee_type, joining_date, dob, contact_number,
-            can_approve_leaves, can_add_employee, can_remove_employee
+            can_approve_leaves, can_manage_documents, can_manage_roles
      FROM users WHERE status = 'active' ORDER BY full_name ASC`
   ).all();
 
@@ -1174,8 +1178,8 @@ app.on('GET', ['/api/v1/user/list', '/user/list'], auth, async (c) => {
       dob: u.dob,
       contactNumber: u.contact_number,
       canApproveLeaves: u.can_approve_leaves === 1,
-      canAddEmployee: u.can_add_employee === 1,
-      canRemoveEmployee: u.can_remove_employee === 1,
+      canManageDocuments: u.can_manage_documents === 1,
+      canManageRoles: u.can_manage_roles === 1,
       leaveBalances: balancesByUser[u.id] || [],
     })),
   });
@@ -1812,13 +1816,13 @@ app.on('PATCH', ['/api/v1/admin/employee/:id', '/admin/employee/:id'], auth, req
   const body    = await c.req.json().catch(() => ({}));
   const { 
     fullName, role, designation, department, employeeType, joiningDate, contactNumber, status, personalEmail,
-    canApproveLeaves, canAddEmployee, canRemoveEmployee
+    canApproveLeaves, canManageDocuments, canManageRoles
   } = body;
 
   const caller = await c.env.DB.prepare(`SELECT work_email FROM users WHERE id = ?`).bind(jwtUser.userId).first();
   const isRaj = caller && caller.work_email === 'raj@thecorvusstudio.com';
 
-  if (!isRaj && (role !== undefined || canApproveLeaves !== undefined || canAddEmployee !== undefined || canRemoveEmployee !== undefined)) {
+  if (!isRaj && (role !== undefined || canApproveLeaves !== undefined || canManageDocuments !== undefined || canManageRoles !== undefined)) {
     return c.json({ status: 'fail', message: 'Only the super admin Raj can update roles and permissions.' }, 403);
   }
 
@@ -1837,8 +1841,8 @@ app.on('PATCH', ['/api/v1/admin/employee/:id', '/admin/employee/:id'], auth, req
   if (personalEmail !== undefined) { updates.push('personal_email = ?'); params.push(personalEmail); }
 
   if (canApproveLeaves !== undefined) { updates.push('can_approve_leaves = ?'); params.push(canApproveLeaves ? 1 : 0); }
-  if (canAddEmployee !== undefined) { updates.push('can_add_employee = ?'); params.push(canAddEmployee ? 1 : 0); }
-  if (canRemoveEmployee !== undefined) { updates.push('can_remove_employee = ?'); params.push(canRemoveEmployee ? 1 : 0); }
+  if (canManageDocuments !== undefined) { updates.push('can_manage_documents = ?'); params.push(canManageDocuments ? 1 : 0); }
+  if (canManageRoles !== undefined) { updates.push('can_manage_roles = ?'); params.push(canManageRoles ? 1 : 0); }
 
   if (updates.length === 0) {
     return c.json({ status: 'fail', message: 'No fields provided to update.' }, 400);
