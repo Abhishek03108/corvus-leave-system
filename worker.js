@@ -2324,6 +2324,26 @@ function getEmailBody(document_type, employee, jobRole) {
   let body = '';
 
   switch (document_type) {
+    case 'Internship Completion Certificate':
+      body = `
+        <p style="color: #334155; font-size: 14px; line-height: 1.7; margin-bottom: 16px;">
+          Congratulations on successfully completing your internship with Corvus Studio.
+        </p>
+        <p style="color: #334155; font-size: 14px; line-height: 1.7; margin-bottom: 16px;">
+          We sincerely appreciate your dedication, enthusiasm, and contributions throughout your internship. It has been a pleasure having you as part of our team.
+        </p>
+        <p style="color: #334155; font-size: 14px; line-height: 1.7; margin-bottom: 16px;">
+          Please find your Internship Completion Certificate attached.
+        </p>
+        <p style="color: #334155; font-size: 14px; line-height: 1.7; margin-bottom: 16px;">
+          Your profile will remain in our talent database. If you choose to apply for future opportunities at Corvus Studio, we will be pleased to consider your application in light of your previous internship experience with us.
+        </p>
+        <p style="color: #334155; font-size: 14px; line-height: 1.7; margin-bottom: 16px;">
+          We wish you continued success in your academic and professional journey and hope to work with you again.
+        </p>
+      `;
+      break;
+
     case 'Offer Letter':
     case 'Appointment Letter':
       body = `
@@ -2516,6 +2536,9 @@ app.on('POST', ['/api/v1/admin/offer-letters/send-email', '/admin/offer-letters/
   // Dynamic Subject Mapping
   let subject = '';
   switch (document_type) {
+    case 'Internship Completion Certificate':
+      subject = `Congratulations on Successfully Completing Your Internship at Corvus Studio`;
+      break;
     case 'Offer Letter':
       subject = `Offer of Employment – Corvus Studio`;
       break;
