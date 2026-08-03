@@ -126,14 +126,14 @@ async function sendOtpEmail(apiKey, to, otp) {
     body: JSON.stringify({
       from: 'Corvus Studio <noreply@thecorvusstudio.com>',
       to,
-      subject: 'Your OTP for Corvus Leave System',
+      subject: 'Your OTP for Corvus Studio Managements',
       html: `
         <div style="font-family: 'Inter', Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f8fafc; padding: 40px 20px;">
           <div style="background-color: #ffffff; border-radius: 16px; padding: 40px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); border: 1px solid #e2e8f0; text-align: center;">
             <h2 style="margin: 0 0 10px; color: #0f172a; font-size: 24px; font-weight: 800; letter-spacing: 0.5px;">CORVUS STUDIO</h2>
-            <div style="text-transform: uppercase; font-size: 11px; font-weight: 700; letter-spacing: 2px; color: #64748b; margin-bottom: 30px;">Leave System</div>
+            <div style="text-transform: uppercase; font-size: 11px; font-weight: 700; letter-spacing: 2px; color: #64748b; margin-bottom: 30px;">Managements</div>
             
-            <p style="color: #475569; font-size: 15px; margin-bottom: 25px; line-height: 1.5;">You are attempting to log in to the Corvus Leave System. Please use the following One-Time Password to complete your authentication.</p>
+            <p style="color: #475569; font-size: 15px; margin-bottom: 25px; line-height: 1.5;">You are attempting to log in to Corvus Studio Managements. Please use the following One-Time Password to complete your authentication.</p>
             
             <div style="background-color: #f0fdfa; border: 1px solid #ccfbf1; border-radius: 12px; padding: 20px; margin-bottom: 25px; display: inline-block;">
               <div style="font-size: 36px; font-weight: 800; letter-spacing: 8px; color: #0d9488; margin-left: 8px;">${otp}</div>
@@ -191,22 +191,22 @@ async function sendWelcomeEmail(apiKey, to, fullName) {
           <!-- Header -->
           <div style="background-color: #0f172a; padding: 32px; text-align: center;">
             <h2 style="margin: 0; color: #ffffff; font-size: 24px; font-weight: 800; letter-spacing: 0.5px;">CORVUS STUDIO</h2>
-            <p style="margin: 6px 0 0 0; color: #94a3b8; font-size: 13px; text-transform: uppercase; letter-spacing: 2px; font-weight: 600;">Leave Management System</p>
+            <p style="margin: 6px 0 0 0; color: #94a3b8; font-size: 13px; text-transform: uppercase; letter-spacing: 2px; font-weight: 600;">Managements</p>
           </div>
 
           <!-- Body -->
           <div style="padding: 40px 32px;">
             <p style="color: #0f172a; font-size: 18px; font-weight: 700; margin: 0 0 8px;">Welcome to Corvus Studio, ${fullName}! 🎉</p>
             <p style="color: #475569; font-size: 14px; line-height: 1.7; margin: 0 0 24px;">
-              Your account has been provisioned in the <strong>Corvus Studio Leave Management System</strong>. This is your central hub for managing leave requests, tracking balances, and staying informed about studio holidays.
+              Your account has been provisioned in the <strong>Corvus Studio Managements Portal</strong>. This is your central hub for managing your profile, roles, and records.
             </p>
 
             <div style="background-color: #f0fdfa; border: 1px solid #ccfbf1; border-radius: 12px; padding: 20px 24px; margin-bottom: 28px;">
               <p style="margin: 0 0 10px; color: #0d9488; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">Getting Started</p>
               <ul style="margin: 0; padding-left: 18px; color: #0f172a; font-size: 13px; line-height: 1.8;">
                 <li>Log in using your <strong>work email</strong> at the portal</li>
-                <li>Apply for leave directly from your dashboard</li>
-                <li>Track your leave balances in real-time</li>
+                <li>Apply for leaves and manage documentation from your dashboard</li>
+                <li>Track your roles, records, and approvals in real-time</li>
                 <li>View studio holiday calendar for the year</li>
               </ul>
             </div>
@@ -222,7 +222,7 @@ async function sendWelcomeEmail(apiKey, to, fullName) {
 
           <!-- Footer -->
           <div style="background-color: #f8fafc; border-top: 1px solid #e2e8f0; padding: 20px 32px; text-align: center;">
-            <p style="margin: 0; color: #94a3b8; font-size: 11px;">This is an automated message from the Corvus Studio Leave System. Please do not reply to this email.</p>
+            <p style="margin: 0; color: #94a3b8; font-size: 11px;">This is an automated message from Corvus Studio Managements. Please do not reply to this email.</p>
           </div>
         </div>
       </div>
@@ -237,7 +237,7 @@ async function sendWelcomeEmail(apiKey, to, fullName) {
       body: JSON.stringify({
         from: 'Corvus Studio <noreply@thecorvusstudio.com>',
         to,
-        subject: 'Welcome to Corvus Studio — Your Leave Portal is Ready',
+        subject: 'Welcome to Corvus Studio — Your Managements Portal is Ready',
         html,
       }),
     });
@@ -336,7 +336,7 @@ async function sendLeaveAppliedEmail(env, ctx, employeeName, employeeEmail, depa
         
         <!-- Footer -->
         <div style="background-color: #f8fafc; border-top: 1px solid #e2e8f0; padding: 24px; text-align: center; font-size: 12px; color: #64748b;">
-          This is an automated notification from the Corvus Studio Leave Portal.<br>
+          This is an automated notification from the Corvus Studio Managements Portal.<br>
           © 2026 Corvus Studio. All rights reserved.
         </div>
       </div>
@@ -374,7 +374,7 @@ async function sendHolidayBroadcastEmail(env, ctx, users, holidayName, holidayDa
           </p>
         </div>
         <div style="background-color: #f8fafc; border-top: 1px solid #e2e8f0; padding: 24px; text-align: center; font-size: 12px; color: #64748b;">
-          This is an automated notification from the Corvus Studio Leave Portal.<br>
+          This is an automated notification from the Corvus Studio Managements Portal.<br>
           © 2026 Corvus Studio. All rights reserved.
         </div>
       </div>
@@ -423,7 +423,7 @@ async function sendLeaveStartingReminderEmail(env, ctx, req) {
           </div>
         </div>
         <div style="background-color: #f8fafc; border-top: 1px solid #e2e8f0; padding: 24px; text-align: center; font-size: 12px; color: #64748b;">
-          This is an automated notification from the Corvus Studio Leave Portal.<br>
+          This is an automated notification from the Corvus Studio Managements Portal.<br>
           © 2026 Corvus Studio. All rights reserved.
         </div>
       </div>
@@ -504,7 +504,7 @@ async function sendLeaveStatusChangedEmail(env, ctx, employeeName, employeeEmail
         
         <!-- Footer -->
         <div style="background-color: #f8fafc; border-top: 1px solid #e2e8f0; padding: 24px; text-align: center; font-size: 12px; color: #64748b;">
-          This is an automated notification from the Corvus Studio Leave Portal.<br>
+          This is an automated notification from the Corvus Studio Managements Portal.<br>
           © 2026 Corvus Studio. All rights reserved.
         </div>
       </div>
@@ -575,7 +575,7 @@ async function sendPrescriptionUploadedEmail(env, employeeName, employeeEmail, l
         
         <!-- Footer -->
         <div style="background-color: #f8fafc; border-top: 1px solid #e2e8f0; padding: 24px; text-align: center; font-size: 12px; color: #64748b;">
-          This is an automated notification from the Corvus Studio Leave Portal.<br>
+          This is an automated notification from the Corvus Studio Managements Portal.<br>
           © 2026 Corvus Studio. All rights reserved.
         </div>
       </div>
@@ -665,7 +665,7 @@ async function handleScheduledReminders(env) {
             
             <!-- Footer -->
             <div style="background-color: #f8fafc; border-top: 1px solid #e2e8f0; padding: 24px; text-align: center; font-size: 12px; color: #64748b;">
-              This is an automated notification from the Corvus Studio Leave Portal.<br>
+              This is an automated notification from the Corvus Studio Managements Portal.<br>
               © 2026 Corvus Studio. All rights reserved.
             </div>
           </div>

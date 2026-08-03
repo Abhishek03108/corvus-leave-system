@@ -1,7 +1,7 @@
 {
-  "name": "corvus-leave-v2-backend",
+  "name": "corvus-studio-managements-backend",
   "version": "2.0.0",
-  "description": "Backend API for Corvus Studio Leave System V2",
+  "description": "Backend API for Corvus Studio Managements Portal",
   "main": "server.js",
   "type": "module",
   "scripts": {
