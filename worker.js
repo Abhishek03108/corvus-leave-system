@@ -1815,12 +1815,11 @@ app.on('PATCH', ['/api/v1/admin/employee/:id', '/admin/employee/:id'], auth, req
   const id      = c.req.param('id');
   const body    = await c.req.json().catch(() => ({}));
   const { 
-    fullName, role, designation, department, employeeType, joiningDate, contactNumber, status, personalEmail,
+    fullName, role, designation, department, employeeType, joiningDate, contactNumber, status, personalEmail, dob,
     canApproveLeaves, canManageDocuments, canManageRoles
   } = body;
 
-  const caller = await c.env.DB.prepare(`SELECT work_email FROM users WHERE id = ?`).bind(jwtUser.userId).first();
-  const isRaj = caller && caller.work_email === 'raj@thecorvusstudio.com';
+  const isRaj = jwtUser.email === 'raj@thecorvusstudio.com';
 
   if (!isRaj && (role !== undefined || canApproveLeaves !== undefined || canManageDocuments !== undefined || canManageRoles !== undefined)) {
     return c.json({ status: 'fail', message: 'Only the super admin Raj can update roles and permissions.' }, 403);
@@ -1839,6 +1838,7 @@ app.on('PATCH', ['/api/v1/admin/employee/:id', '/admin/employee/:id'], auth, req
   if (contactNumber !== undefined) { updates.push('contact_number = ?'); params.push(contactNumber); }
   if (status !== undefined) { updates.push('status = ?'); params.push(status); }
   if (personalEmail !== undefined) { updates.push('personal_email = ?'); params.push(personalEmail); }
+  if (dob !== undefined) { updates.push('dob = ?'); params.push(dob); }
 
   if (canApproveLeaves !== undefined) { updates.push('can_approve_leaves = ?'); params.push(canApproveLeaves ? 1 : 0); }
   if (canManageDocuments !== undefined) { updates.push('can_manage_documents = ?'); params.push(canManageDocuments ? 1 : 0); }
@@ -1848,14 +1848,16 @@ app.on('PATCH', ['/api/v1/admin/employee/:id', '/admin/employee/:id'], auth, req
     return c.json({ status: 'fail', message: 'No fields provided to update.' }, 400);
   }
 
+  const numericId = Number(id);
   query += updates.join(', ') + ' WHERE id = ?';
-  params.push(id);
+  params.push(numericId);
 
   await c.env.DB.prepare(query).bind(...params).run();
 
+  const numericUserId = Number(jwtUser.userId);
   await c.env.DB.prepare(
     `INSERT INTO audit_logs (action, performed_by, target_user_id, details, created_at) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)`
-  ).bind('EMPLOYEE_UPDATED', jwtUser.userId, id, `Updated employee #${id}`).run();
+  ).bind('EMPLOYEE_UPDATED', numericUserId, numericId, `Updated employee #${numericId}`).run();
 
   return c.json({ status: 'success', message: 'Employee updated successfully.' });
 });
