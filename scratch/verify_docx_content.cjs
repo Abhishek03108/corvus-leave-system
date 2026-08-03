@@ -33,7 +33,7 @@ const checks = {
   ],
   'Salary Certificate': [
     'should not be construed as a guarantee of continued employment',
-    'Permanent / Confirmed',
+    'SALARY STATEMENT',
   ],
   'Employment Verification Certificate': [
     'The above information is provided in good faith based on our employment records',

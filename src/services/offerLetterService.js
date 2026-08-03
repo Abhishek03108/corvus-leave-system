@@ -1082,20 +1082,75 @@ function relievingLetterContent(p) {
 }
 
 function salaryCertificateContent(p) {
+  const fmt = n => Math.round(Number(n) || 0).toLocaleString('en-IN');
+  
+  const basic = Number(p.BASIC_SALARY) || 0;
+  const hra = Number(p.HRA) || 0;
+  const special = Number(p.SPECIAL_ALLOWANCE) || 0;
+  const otherAllowances = Number(p.OTHER_ALLOWANCES) || 0;
+  const bonus = Number(p.BONUS) || 0;
+  const incentives = Number(p.INCENTIVES) || 0;
+
+  const employeePF = Number(p.EMPLOYEE_PF) || 0;
+  const profTax = Number(p.PROF_TAX) || 0;
+  const incomeTax = Number(p.INCOME_TAX) || 0;
+  const leaveDeduction = Number(p.LEAVE_DEDUCTION) || 0;
+  const otherDeductions = Number(p.OTHER_DEDUCTIONS) || 0;
+
+  const gross = Number(p.GROSS_SALARY) || (basic + hra + special);
+  const totalEarnings = gross + otherAllowances + bonus + incentives;
+  const totalDeductions = employeePF + profTax + incomeTax + leaveDeduction + otherDeductions;
+  const netTakeHome = totalEarnings - totalDeductions;
+
   return `
 <p class="salutation">To Whom It May Concern,</p>
 <p>This is to certify that <strong>${p.NAME}</strong> (Employee ID: <strong>${p.DOC_ID}</strong>) is currently employed with <span class="co">Corvus Studio</span> as <strong>${p.ROLE}</strong> in the <strong>${p.DEPT}</strong> department with effect from <strong>${p.JOINING}</strong>.</p>
-<table class="doc-table">
-  <tr><td>Employee Name</td><td>${p.NAME}</td></tr>
-  <tr><td>Employee ID</td><td>${p.DOC_ID}</td></tr>
-  <tr><td>Designation</td><td>${p.ROLE}</td></tr>
-  <tr><td>Department</td><td>${p.DEPT}</td></tr>
-  <tr><td>Date of Joining</td><td>${p.JOINING}</td></tr>
-  <tr><td>Employment Status</td><td>Permanent / Confirmed</td></tr>
-  <tr><td>Gross Monthly Salary</td><td>${p.STIPEND !== 'unpaid' ? 'INR ' + Number(p.STIPEND).toLocaleString('en-IN') : 'As agreed'}</td></tr>
-  ${p.ANNUAL_SALARY ? '<tr><td>Annual CTC</td><td>INR ' + Number(p.ANNUAL_SALARY).toLocaleString('en-IN') + '</td></tr>' : ''}
-  ${p.SALARY_PERIOD ? '<tr><td>Salary Period</td><td>' + p.SALARY_PERIOD + '</td></tr>' : ''}
-</table>
+
+<div style="margin-top:15px; margin-bottom:15px">
+  <div style="font-weight:bold; font-size:11pt; border-bottom:1px solid #1a1a1a; padding-bottom:3px; margin-bottom:6px">SALARY STATEMENT</div>
+  <table class="breakdown-table">
+    <thead>
+      <tr><th colspan="2">Earnings</th><th colspan="2">Deductions</th></tr>
+      <tr>
+        <td class="label">Component</td><td class="amount">Monthly (INR)</td>
+        <td class="label">Component</td><td class="amount">Monthly (INR)</td>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Basic Salary</td><td class="amount">&#8377;&nbsp;${fmt(basic)}</td>
+        <td>Employee PF (12% of Basic)</td><td class="amount">&#8377;&nbsp;${fmt(employeePF)}</td>
+      </tr>
+      <tr>
+        <td>House Rent Allowance (HRA)</td><td class="amount">&#8377;&nbsp;${fmt(hra)}</td>
+        <td>Professional Tax (PT)</td><td class="amount">&#8377;&nbsp;${fmt(profTax)}</td>
+      </tr>
+      <tr>
+        <td>Special Allowance</td><td class="amount">&#8377;&nbsp;${fmt(special)}</td>
+        <td>Income Tax / TDS</td><td class="amount">&#8377;&nbsp;${fmt(incomeTax)}</td>
+      </tr>
+      <tr>
+        <td>Other Allowances</td><td class="amount">&#8377;&nbsp;${fmt(otherAllowances)}</td>
+        <td>Leave Deduction</td><td class="amount">&#8377;&nbsp;${fmt(leaveDeduction)}</td>
+      </tr>
+      <tr>
+        <td>Bonus &amp; Incentives</td><td class="amount">&#8377;&nbsp;${fmt(bonus + incentives)}</td>
+        <td>Other Deductions</td><td class="amount">&#8377;&nbsp;${fmt(otherDeductions)}</td>
+      </tr>
+    </tbody>
+    <tfoot>
+      <tr class="total-row">
+        <td>Total Earnings (Gross)</td><td class="amount">&#8377;&nbsp;${fmt(totalEarnings)}</td>
+        <td>Total Deductions</td><td class="amount">&#8377;&nbsp;${fmt(totalDeductions)}</td>
+      </tr>
+      <tr class="net-row highlight" style="background:#fff8e1">
+        <td colspan="2"><strong>Net Monthly Salary (Take-Home)</strong></td>
+        <td colspan="2" class="amount" style="color:#d00"><strong>&#8377;&nbsp;${fmt(netTakeHome)}</strong></td>
+      </tr>
+    </tfoot>
+  </table>
+</div>
+
 <p>This certificate is issued at the request of the employee for loan / visa / bank / personal purposes only and should not be construed as a guarantee of continued employment.</p>`;
 }
 
