@@ -594,6 +594,8 @@ html::-webkit-scrollbar, body::-webkit-scrollbar, *::-webkit-scrollbar {
 .net-row.highlight { background: #fff8e1; }
 .net-amount { color: #d00; }
 .breakdown-note { font-size: 9pt; margin-top: 10px; color: #555; }
+.pf-section { margin-top: 14px; }
+.pf-title { font-family: 'Times New Roman', serif; font-size: 11pt; font-weight: bold; text-decoration: underline; text-underline-offset: 3px; margin-bottom: 4px; }
 
 @media print {
   html, body { margin: 0; padding: 0; width: 210mm; height: 297mm; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
@@ -628,7 +630,7 @@ export function renderDocument(p, title, bodyContent, documentType = 'Offer Lett
   let page3Content = '';
   if (isOfferLetter) {
         // Page 2 = salary breakdown (only for paid roles)
-    if (p.MONTHLY_CTC || p.STIPEND !== 'unpaid') {
+    if (p.STIPEND !== 'unpaid') {
       page2Content = salaryBreakdownPage(p);
     }
     // Page 3 = acceptance
@@ -754,7 +756,14 @@ function salaryBreakdownPage(p) {
   const deductions = employeePF;
   const net        = gross - deductions;
 
-  const fmt = n => n.toLocaleString('en-IN');
+  // PF Maturity calculation (5 years @ 8.25% p.a. compounded monthly)
+  const monthlyPF  = employeePF + employerPF;      // total monthly PF corpus contribution
+  const annualPF   = monthlyPF * 12;
+  const pfRate     = 8.25 / 100 / 12;              // monthly rate
+  const pfMonths   = 60;                            // 5 years
+  const pfMaturity = Math.round(monthlyPF * (((Math.pow(1 + pfRate, pfMonths) - 1) / pfRate) * (1 + pfRate)));
+
+  const fmt = n => Math.round(n).toLocaleString('en-IN');
 
   return `
 <div class="page-2">
@@ -777,11 +786,11 @@ function salaryBreakdownPage(p) {
       <tbody>
         <tr>
           <td>Basic Salary</td><td class="amount">&#8377;&nbsp;${fmt(basic)}</td>
-          <td>Employee PF (12%)</td><td class="amount">&#8377;&nbsp;${fmt(employeePF)}</td>
+          <td>Employee PF (12% of Basic)</td><td class="amount">&#8377;&nbsp;${fmt(employeePF)}</td>
         </tr>
         <tr>
           <td>House Rent Allowance (HRA)</td><td class="amount">&#8377;&nbsp;${fmt(hra)}</td>
-          <td></td><td></td>
+          <td>Employer PF (12% of Basic)</td><td class="amount">&#8377;&nbsp;${fmt(employerPF)}</td>
         </tr>
         <tr>
           <td>Special Allowance</td><td class="amount">&#8377;&nbsp;${fmt(special)}</td>
@@ -808,9 +817,33 @@ function salaryBreakdownPage(p) {
       </tfoot>
     </table>
 
+    <!-- PF Maturity Section -->
+    <div class="pf-section">
+      <div class="pf-title">PROVIDENT FUND SUMMARY</div>
+      <table class="breakdown-table" style="margin-top:6px">
+        <thead>
+          <tr><th colspan="2">PF Contribution Details</th><th colspan="2">PF Maturity Projection</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Monthly Employee PF</td><td class="amount">&#8377;&nbsp;${fmt(employeePF)}</td>
+            <td>Total Monthly PF (Employee + Employer)</td><td class="amount">&#8377;&nbsp;${fmt(monthlyPF)}</td>
+          </tr>
+          <tr>
+            <td>Monthly Employer PF</td><td class="amount">&#8377;&nbsp;${fmt(employerPF)}</td>
+            <td>Annual PF Contribution</td><td class="amount">&#8377;&nbsp;${fmt(annualPF)}</td>
+          </tr>
+          <tr class="net-row highlight">
+            <td>Total Monthly PF</td><td class="amount">&#8377;&nbsp;${fmt(monthlyPF)}</td>
+            <td><strong>Estimated PF Maturity (5 yrs @ 8.25%)</strong></td><td class="amount net-amount"><strong>&#8377;&nbsp;${fmt(pfMaturity)}</strong></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
     <div class="breakdown-note">
-      <p><strong>Note:</strong> The above salary structure is for reference only. Actual take-home may vary subject to applicable statutory deductions (PF, PT, TDS) and any other deductions as per company policy. The <strong>Net Monthly Salary</strong> of <strong>INR ${fmt(net)}</strong> represents the amount credited to your bank account each month.</p>
-      <p>Employer PF contribution of <strong>INR ${fmt(employerPF)}</strong> per month is borne by Corvus Studio and forms part of your CTC.</p>
+      <p><strong>Note:</strong> The above salary structure is for reference. Actual take-home may vary subject to applicable statutory deductions (PF, PT, TDS). The <strong>Net Monthly Salary</strong> of <strong>INR ${fmt(net)}</strong> is the amount credited to your bank account each month.</p>
+      <p>PF maturity is an estimate based on 5 years of continuous contribution at the current EPF interest rate of <strong>8.25% p.a.</strong> Actual maturity may vary based on withdrawals, rate revisions, and tenure.</p>
     </div>
   </div>
   ${FOOTER}
