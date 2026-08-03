@@ -39,6 +39,19 @@ const DOC_TYPE_PREFIX = {
  *   employeeCode – the employee's CS-code (e.g. 'CS074'); if absent, omitted
  *   serial      – 3-digit counter scoped to this document type prefix
  */
+
+// ─── Company Branding ──────────────────────────────────────────────────────────
+// Returns the authority signature image and default signatory details so any
+// module (e.g. Certificate Manager) can share the same official branding.
+export function getCompanyBranding() {
+  return {
+    signatureDataUrl: SIGNATURE,
+    signatoryName:   'Raj Kishore Kumar',
+    signatoryTitle:  'CEO & Founder',
+    companyName:     'Corvus Studio',
+  };
+}
+
 export async function generateDocumentId(db, documentType, employeeCode) {
   const prefix = DOC_TYPE_PREFIX[documentType] || 'CS';
 

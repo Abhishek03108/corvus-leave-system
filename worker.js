@@ -2,7 +2,7 @@ import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { signAccessToken, signRefreshToken, verifyToken } from './src/utils/jwt.js';
 import { auth, requireRole } from './src/middleware/auth.js';
-import { generateDocumentId, detectEmploymentType, buildPlaceholders, generateOfferLetterHtml, selectTemplate } from './src/services/offerLetterService.js';
+import { generateDocumentId, detectEmploymentType, buildPlaceholders, generateOfferLetterHtml, selectTemplate, getCompanyBranding } from './src/services/offerLetterService.js';
 
 const app = new Hono();
 
@@ -2489,6 +2489,14 @@ function getEmailBody(document_type, employee, jobRole) {
 
   return containerStart + body + containerEnd;
 }
+
+// ─── GET /admin/branding ─────────────────────────────────────────────────────
+// Returns the official Corvus Studio signatory details and signature image
+// so all modules (Document Management, Certificate Manager, etc.) share one
+// authoritative source of truth for company branding.
+app.on('GET', ['/api/v1/admin/branding', '/admin/branding'], auth, requireRole('admin'), (c) => {
+  return c.json({ status: 'success', data: getCompanyBranding() });
+});
 
 app.on('POST', ['/api/v1/admin/offer-letters/send-email', '/admin/offer-letters/send-email'], auth, requireRole('admin'), async (c) => {
   const body = await c.req.json().catch(() => ({}));
