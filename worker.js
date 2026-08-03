@@ -2150,32 +2150,36 @@ app.on('POST', ['/api/v1/admin/offer-letters/generate', '/admin/offer-letters/ge
 
     const employmentType = detectEmploymentType(employee.employee_type);
 
+    // Document IDs are DRAFT until the email is sent — no DB write here.
+    // The real permanent ID is committed only in the send-email endpoint.
     let documentId;
     if (body.document_id) {
+      // Caller explicitly passed an ID (e.g. re-generate after email was sent)
       documentId = body.document_id;
-    } else if (!isNewCandidate) {
-      // Check if this employee already has a draft document ID — reuse it to avoid counter inflation on preview
-      const existingDraft = await c.env.DB.prepare(
-        `SELECT document_id FROM offer_letters WHERE employee_id = ? ORDER BY generated_at DESC LIMIT 1`
-      ).bind(employee.id).first();
-
-      if (existingDraft && !body.force_new) {
-        documentId = existingDraft.document_id;
-      } else {
-        documentId = await generateDocumentId(c.env.DB, body.documentType || options?.documentType, employee.employee_code || employee.employeeCode);
-        // Store in offer_letters table to guarantee Document ID uniqueness
-        const createdBy = jwtUser?.userId || jwtUser?.id || null;
-        await c.env.DB.prepare(
-          `INSERT INTO offer_letters (document_id, employee_id, employment_type, created_by) VALUES (?, ?, ?, ?)`
-        ).bind(documentId, employee.id, employmentType, createdBy).run();
-      }
     } else {
-      // For new candidates (not in users table yet), we generate a new ID and insert employee_id as 0
-      documentId = await generateDocumentId(c.env.DB, body.documentType || options?.documentType, options?.candidateCode || null);
-      const createdBy = jwtUser?.userId || jwtUser?.id || null;
-      await c.env.DB.prepare(
-        `INSERT INTO offer_letters (document_id, employee_id, employment_type, created_by) VALUES (?, 0, ?, ?)`
-      ).bind(documentId, employmentType, createdBy).run();
+      // Return a human-readable DRAFT placeholder so the preview shows something meaningful
+      const docType = body.documentType || options?.documentType || 'Document';
+      const empCode  = (!isNewCandidate && (employee.employee_code || employee.employeeCode))
+                         ? (employee.employee_code || employee.employeeCode)
+                         : null;
+      const prefix   = {
+        'Offer Letter':                        'OL',
+        'Salary Certificate':                  'SC',
+        'Experience Letter':                   'EL',
+        'Confirmation Letter':                 'CL',
+        'Relieving Letter':                    'RL',
+        'Increment Letter':                    'IL',
+        'Promotion Letter':                    'PLT',
+        'No Objection Certificate (NOC)':      'NOC',
+        'Appreciation Letter':                 'APL',
+        'Warning Letter':                      'WL',
+        'Show Cause Notice':                   'SCN',
+        'Employment Verification Certificate': 'EVC',
+        'Resignation Acceptance Letter':       'RA',
+        'Full & Final Settlement Letter':      'FFS',
+        'Probation Extension Letter':          'PE',
+      }[docType] || 'DOC';
+      documentId = empCode ? `${prefix}/${empCode}/DRAFT` : `${prefix}/DRAFT`;
     }
 
     // Generate authentic Corvus Studio offer letter based on role + employment type
@@ -2363,6 +2367,23 @@ app.on('POST', ['/api/v1/admin/offer-letters/send-email', '/admin/offer-letters/
     }
   ] : undefined;
 
+  // ── Commit the permanent document ID when email is actually sent ──────────
+  let finalDocId = document_id;
+  if (!document_id || document_id.includes('DRAFT') || !document_id.trim()) {
+    // Generate and store the real permanent ID now
+    finalDocId = await generateDocumentId(
+      c.env.DB,
+      document_type,
+      isNewCandidate ? (body.employee_code || null) : (employee.employee_code || employee.employeeCode || null)
+    );
+    const createdBy = body.created_by || null;
+    const empIdForDb = isNewCandidate ? 0 : employee.id;
+    const empType    = isNewCandidate ? (body.employment_type || 'Full-Time') : (employee.employee_type || 'Full-Time');
+    await c.env.DB.prepare(
+      `INSERT OR IGNORE INTO offer_letters (document_id, employee_id, employment_type, created_by) VALUES (?, ?, ?, ?)`
+    ).bind(finalDocId, empIdForDb, empType, createdBy).run();
+  }
+
   await sendNotificationEmail(c.env.RESEND_API_KEY, {
     to: recipientEmail,
     cc: ccEmails.length ? ccEmails : undefined,
@@ -2374,7 +2395,8 @@ app.on('POST', ['/api/v1/admin/offer-letters/send-email', '/admin/offer-letters/
 
   return c.json({
     status: 'success',
-    message: `${document_type} emailed to ${recipientEmail}${ccEmails.length ? ` (CC: ${ccEmails.join(', ')})` : ''}.`
+    message: `${document_type} emailed to ${recipientEmail}${ccEmails.length ? ` (CC: ${ccEmails.join(', ')})` : ''}.`,
+    data: { document_id: finalDocId }
   });
 });
 
