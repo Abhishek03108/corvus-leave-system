@@ -102,6 +102,13 @@ export function buildPlaceholders(emp, docId, opts = {}) {
     EMP_TYPE:  opts.employmentType || detectEmploymentType(emp.employee_type),
     MANAGER:   opts.reportingManager || 'the Reporting Manager',
     RESPONSIBILITIES: getResponsibilitiesText(opts.jobRole || emp.designation || 'Team Member'),
+    // Optional doc-specific fields
+    CONFIRM_DATE: opts.confirmationDate ? new Date(opts.confirmationDate).toLocaleDateString('en-GB',{day:'2-digit',month:'long',year:'numeric'}) : endDate,
+    PREV_SALARY:  opts.previousSalary  || null,
+    EFFECT_DATE:  opts.effectiveDate   ? new Date(opts.effectiveDate).toLocaleDateString('en-GB',{day:'2-digit',month:'long',year:'numeric'}) : joining,
+    NEW_ROLE:     opts.newRole         || null,
+    RESIGN_DATE:  opts.resignationDate ? new Date(opts.resignationDate).toLocaleDateString('en-GB',{day:'2-digit',month:'long',year:'numeric'}) : null,
+    NOC_PURPOSE:  opts.nocPurpose      || 'professional purposes',
   };
 }
 
@@ -534,6 +541,25 @@ html::-webkit-scrollbar, body::-webkit-scrollbar, *::-webkit-scrollbar {
   min-width: 180px;
 }
 
+/* ─── Detail Table (Appointment, Confirmation, etc.) ─── */
+.doc-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 12px 0;
+  font-size: 10.5pt;
+}
+.doc-table td {
+  padding: 6px 10px;
+  border: 1px solid #ccc;
+  vertical-align: top;
+}
+.doc-table tr td:first-child {
+  font-weight: 600;
+  width: 45%;
+  background: #f5f5f5;
+  color: #333;
+}
+
 @media print {
   html, body { margin: 0; padding: 0; width: 210mm; height: 297mm; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
   .page, .page-2 { width: 210mm; height: 297mm; margin: 0; border: none; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
@@ -816,133 +842,258 @@ function parttimeBody(p) {
 <p>We look forward to welcoming you to the team.</p>`;
 }
 
+
 function appointmentLetterContent(p) {
   return `
 <p class="salutation">Dear <strong>${p.NAME}</strong>,</p>
-<p>We are pleased to appoint you to the position of <strong>${p.ROLE}</strong> within the <strong>${p.DEPT}</strong> department at <span class="co">Corvus Studio</span>, effective from your date of joining <strong>${p.JOINING}</strong>. You will report directly to <strong>${p.MANAGER}</strong>.</p>
-<p>Your employment will be governed by the standard policies, code of conduct, and employment guidelines of the studio. Your current work location is designated as <strong>${p.LOCATION}</strong>, and you are expected to perform the duties associated with your role and designation.</p>
-<p>Your responsibilities in this capacity will include ${p.RESPONSIBILITIES}. You will also cooperate on active production schedules and tasks assigned by leadership.</p>
-<p>Your monthly compensation is established at <strong>${p.STIPEND}</strong>, subject to statutory deductions. You will be on probation for a period of three (3) months, after which your employment will be confirmed subject to satisfactory performance.</p>
-<p>Please maintain strict confidentiality regarding all proprietary projects, client assets, and internal workflows. All creative materials produced during your tenure remain the exclusive property of <span class="co">Corvus Studio</span>.</p>
-<p>We congratulate you on your appointment and look forward to a successful association.</p>`;
+<p>We are pleased to appoint you as <strong>${p.ROLE}</strong> in the <strong>${p.DEPT}</strong> team at <span class="co">Corvus Studio</span> with effect from <strong>${p.JOINING}</strong>, subject to the terms and conditions set out below.</p>
+<table class="doc-table">
+  <tr><td>Designation</td><td>${p.ROLE}</td></tr>
+  <tr><td>Department</td><td>${p.DEPT}</td></tr>
+  <tr><td>Date of Joining</td><td>${p.JOINING}</td></tr>
+  <tr><td>Place of Work</td><td>${p.LOCATION || 'Remote — Primary Location: India'}</td></tr>
+  <tr><td>Employment Type</td><td>${p.EMP_TYPE || 'Full-Time'}</td></tr>
+  <tr><td>Gross Monthly CTC</td><td>${p.STIPEND !== 'unpaid' ? 'INR ' + p.STIPEND + ' per month' : 'As agreed'}</td></tr>
+  <tr><td>Probation Period</td><td>Three (3) months from Date of Joining</td></tr>
+  <tr><td>Reporting To</td><td>${p.MANAGER}</td></tr>
+</table>
+<p><strong>Terms &amp; Conditions</strong></p>
+<ol>
+  <li>This appointment is subject to your submission of all required documents, verification of qualifications and prior employment, and execution of the Corvus Studio Employee NDA.</li>
+  <li>You will be governed by the Corvus Studio Employee Manual (Version 1.0) and all policies communicated thereunder, as amended from time to time.</li>
+  <li>This letter and your employment are subject to a probation period of three (3) months. Confirmation of employment is conditional on satisfactory performance.</li>
+  <li>Either party may terminate the employment during the probation period by giving fifteen (15) days' written notice. Post-confirmation, the notice period is thirty (30) days.</li>
+  <li>All intellectual property created during your employment shall vest in Corvus Studio. You are required to maintain strict confidentiality of client and company information as per the Employee NDA.</li>
+  <li>This appointment is conditional upon your not being subject to any restrictive covenant from a prior employer that would prevent you from joining Corvus Studio.</li>
+</ol>
+<p>Please sign and return a copy of this letter as your acceptance. We look forward to welcoming you to Corvus Studio.</p>`;
 }
 
 function confirmationLetterContent(p) {
+  const confirmDate = p.CONFIRM_DATE || p.END_DATE;
   return `
 <p class="salutation">Dear <strong>${p.NAME}</strong>,</p>
-<p>Following the successful completion of your probation period on <strong>${p.JOINING}</strong> and the subsequent review of your performance, we are delighted to confirm your appointment as a permanent employee at <span class="co">Corvus Studio</span> in the position of <strong>${p.ROLE}</strong> within the <strong>${p.DEPT}</strong> department.</p>
-<p>Since joining the studio, your dedication, professionalism, and creative contributions have aligned with our production standards. In this confirmed capacity, your responsibilities will continue to center on <strong>${p.ROLE}</strong> duties, including ${p.RESPONSIBILITIES}.</p>
-<p>All other terms and conditions of your employment, including your current monthly salary of <strong>${p.STIPEND}</strong>, work location of <strong>${p.LOCATION}</strong>, and standard confidentiality covenants, will remain in full force as per your initial appointment letter.</p>
-<p>We appreciate your valuable efforts and look forward to your continued growth and success with Corvus Studio.</p>`;
+<p>We are pleased to inform you that on completion of your probation period, your employment with <span class="co">Corvus Studio</span> has been confirmed with effect from <strong>${confirmDate}</strong>.</p>
+<table class="doc-table">
+  <tr><td>Employee Name</td><td>${p.NAME}</td></tr>
+  <tr><td>Employee ID</td><td>${p.DOC_ID}</td></tr>
+  <tr><td>Designation</td><td>${p.ROLE}</td></tr>
+  <tr><td>Department</td><td>${p.DEPT}</td></tr>
+  <tr><td>Date of Joining</td><td>${p.JOINING}</td></tr>
+  <tr><td>Date of Confirmation</td><td>${confirmDate}</td></tr>
+  <tr><td>Confirmed CTC</td><td>${p.STIPEND !== 'unpaid' ? 'INR ' + p.STIPEND + ' per month (Gross)' : 'As agreed'}</td></tr>
+  <tr><td>Notice Period</td><td>Thirty (30) days (post-confirmation)</td></tr>
+</table>
+<p>Your performance during the probation period has been evaluated and found satisfactory. You will continue to be governed by the Corvus Studio Employee Manual and all applicable company policies.</p>
+<p>All other terms and conditions of your original Appointment Letter remain unchanged unless expressly modified herein.</p>
+<p>We look forward to your continued contribution to <span class="co">Corvus Studio</span>.</p>`;
 }
 
 function experienceLetterContent(p) {
   return `
-<p class="salutation">TO WHOMSOEVER IT MAY CONCERN,</p>
-<p>This is to certify that <strong>${p.NAME}</strong> was employed with <span class="co">Corvus Studio</span> in the position of <strong>${p.ROLE}</strong> within the <strong>${p.DEPT}</strong> department from <strong>${p.JOINING}</strong> to <strong>${p.END_DATE}</strong>.</p>
-<p>During their tenure with us, they were responsible for ${p.RESPONSIBILITIES}. They demonstrated high professionalism, technical competence, and a collaborative team attitude in executing their deliverables.</p>
-<p>We have no hesitation in recommending them for future opportunities and wish them success in all their future pursuits.</p>`;
+<p class="salutation">To Whom It May Concern,</p>
+<p>This is to certify that <strong>${p.NAME}</strong> (Employee ID: <strong>${p.DOC_ID}</strong>) was employed with <span class="co">Corvus Studio</span> in the capacity of <strong>${p.ROLE}</strong> in the <strong>${p.DEPT}</strong> team from <strong>${p.JOINING}</strong> to <strong>${p.END_DATE}</strong>.</p>
+<p>During the tenure of their association with us, <strong>${p.NAME}</strong> demonstrated professional competence, technical excellence, and consistent performance, fulfilling the responsibilities assigned to the role diligently and professionally.</p>
+<p>We wish <strong>${p.NAME}</strong> the very best in all future endeavours.</p>
+<p>This letter is issued at the request of the individual for whatever purpose it may serve.</p>`;
 }
 
 function relievingLetterContent(p) {
   return `
-<p class="salutation">Dear <strong>${p.NAME}</strong>,</p>
-<p>We are writing to confirm that you are officially relieved from your duties as <strong>${p.ROLE}</strong> in the <strong>${p.DEPT}</strong> department at <span class="co">Corvus Studio</span>, effective from the close of business hours on <strong>${p.END_DATE}</strong>.</p>
-<p>This follows the acceptance of your resignation. We confirm that you have successfully completed all handovers of assets, files, and project repositories, and that your final dues have been fully settled in accordance with the studio's policies.</p>
-<p>We record our appreciation for the services rendered by you during your tenure from <strong>${p.JOINING}</strong> to <strong>${p.END_DATE}</strong>. Your conduct during this association was professional and cooperative.</p>
-<p>We wish you the very best in your future professional endeavors.</p>`;
+<p class="salutation">To Whom It May Concern,</p>
+<p>This is to certify that <strong>${p.NAME}</strong> (Employee ID: <strong>${p.DOC_ID}</strong>), who was employed with <span class="co">Corvus Studio</span> as <strong>${p.ROLE}</strong> in the <strong>${p.DEPT}</strong> team, has been duly relieved from their duties with effect from the close of business on <strong>${p.END_DATE}</strong>.</p>
+<p>A full and final settlement of dues has been completed per the Company's standard process. The employee has completed the handover of responsibilities, access credentials, and company data as required.</p>
+<p><strong>${p.NAME}</strong> is no longer associated with <span class="co">Corvus Studio</span> as of the above date and is free to pursue other opportunities.</p>
+<p>We thank <strong>${p.NAME}</strong> for their contributions and wish them well in their future career.</p>
+<p>This letter is issued at the request of the individual for whatever purpose it may serve.</p>`;
 }
 
 function salaryCertificateContent(p) {
   return `
-<p class="salutation">TO WHOMSOEVER IT MAY CONCERN,</p>
-<p>This is to certify that <strong>${p.NAME}</strong> is currently employed with <span class="co">Corvus Studio</span> as a <strong>${p.ROLE}</strong> in the <strong>${p.DEPT}</strong> department, since their joining date of <strong>${p.JOINING}</strong>.</p>
-<p>Their current monthly gross salary is <strong>${p.STIPEND}</strong>, which is paid directly to their registered bank account. This certificate is issued upon the employee's request for verification purposes.</p>
-<p>For any further validation, please feel free to reach out to the HR Operations desk.</p>`;
+<p class="salutation">To Whom It May Concern,</p>
+<p>This is to certify that <strong>${p.NAME}</strong> (Employee ID: <strong>${p.DOC_ID}</strong>) is currently employed with <span class="co">Corvus Studio</span> as <strong>${p.ROLE}</strong> in the <strong>${p.DEPT}</strong> department with effect from <strong>${p.JOINING}</strong>.</p>
+<table class="doc-table">
+  <tr><td>Employee Name</td><td>${p.NAME}</td></tr>
+  <tr><td>Employee ID</td><td>${p.DOC_ID}</td></tr>
+  <tr><td>Designation</td><td>${p.ROLE}</td></tr>
+  <tr><td>Department</td><td>${p.DEPT}</td></tr>
+  <tr><td>Date of Joining</td><td>${p.JOINING}</td></tr>
+  <tr><td>Employment Status</td><td>Permanent / Confirmed</td></tr>
+  <tr><td>Gross Monthly Salary</td><td>${p.STIPEND !== 'unpaid' ? 'INR ' + p.STIPEND : 'As agreed'}</td></tr>
+</table>
+<p>This certificate is issued at the request of the employee for loan / visa / bank / personal purposes only and should not be construed as a guarantee of continued employment.</p>`;
 }
 
 function employmentVerificationCertificateContent(p) {
   return `
-<p class="salutation">TO WHOMSOEVER IT MAY CONCERN,</p>
-<p>This is to certify and verify that <strong>${p.NAME}</strong> is employed with <span class="co">Corvus Studio</span> as a <strong>${p.ROLE}</strong> within the <strong>${p.DEPT}</strong> department, since <strong>${p.JOINING}</strong>.</p>
-<p>During their employment, they have demonstrated high professionalism and compliance with the studio's standards. Their employment status is active and in good standing.</p>
-<p>This certificate is issued at the request of the employee for verification of employment purposes.</p>`;
+<p class="salutation">To Whom It May Concern,</p>
+<p>This is to confirm that <strong>${p.NAME}</strong> (Employee ID: <strong>${p.DOC_ID}</strong>) is currently employed with <span class="co">Corvus Studio</span>, an independent creative production studio based in Bengaluru, India.</p>
+<table class="doc-table">
+  <tr><td>Employee Name</td><td>${p.NAME}</td></tr>
+  <tr><td>Employee ID</td><td>${p.DOC_ID}</td></tr>
+  <tr><td>Designation</td><td>${p.ROLE}</td></tr>
+  <tr><td>Department</td><td>${p.DEPT}</td></tr>
+  <tr><td>Employment Period</td><td>${p.JOINING} to Present</td></tr>
+  <tr><td>Employment Type</td><td>${p.EMP_TYPE || 'Full-Time'}</td></tr>
+  <tr><td>Employment Status</td><td>Active</td></tr>
+</table>
+<p>The above information is provided in good faith based on our employment records. Any additional verification queries may be directed to Corvus Studio at <a href="mailto:hello@thecorvusstudio.com">hello@thecorvusstudio.com</a>.</p>
+<p>This certificate is issued at the request of the individual named above.</p>`;
 }
 
 function incrementLetterContent(p) {
+  const prevSalary = p.PREV_SALARY || 'previous CTC';
+  const newSalary  = p.STIPEND !== 'unpaid' ? 'INR ' + p.STIPEND : 'revised CTC';
+  const effectDate = p.EFFECT_DATE || p.JOINING;
   return `
 <p class="salutation">Dear <strong>${p.NAME}</strong>,</p>
-<p>Consequent to the recent review of your performance and your valuable contributions to the studio, we are pleased to inform you that your monthly gross compensation has been incremented to <strong>${p.STIPEND}</strong>, effective from <strong>${p.JOINING}</strong>.</p>
-<p>In this period of growth for the studio, we highly value your dedication as a <strong>${p.ROLE}</strong> in the <strong>${p.DEPT}</strong> department. Your role-specific responsibilities will continue to include ${p.RESPONSIBILITIES}.</p>
-<p>All other terms and conditions of your employment, including confidentiality, work hours, and intellectual property ownership, remain unchanged.</p>
-<p>We congratulate you on your performance-based increment and look forward to your continued contribution to the studio's success.</p>`;
+<p>We are pleased to inform you of a revision in your compensation, effective <strong>${effectDate}</strong>, in recognition of your performance and contribution to <span class="co">Corvus Studio</span>.</p>
+<table class="doc-table">
+  <tr><td>Employee Name</td><td>${p.NAME}</td></tr>
+  <tr><td>Employee ID</td><td>${p.DOC_ID}</td></tr>
+  <tr><td>Designation</td><td>${p.ROLE}</td></tr>
+  <tr><td>Previous Gross Monthly</td><td>${prevSalary !== 'previous CTC' ? 'INR ' + prevSalary : prevSalary}</td></tr>
+  <tr><td>Revised Gross Monthly</td><td>${newSalary}</td></tr>
+  <tr><td>Effective Date</td><td>${effectDate}</td></tr>
+</table>
+<p>All other terms and conditions of your employment remain unchanged. The revised salary will be reflected in your payroll from the effective month.</p>
+<p>We appreciate your dedication and continued contribution to <span class="co">Corvus Studio</span>. We look forward to your continued growth with the team.</p>`;
 }
 
 function promotionLetterContent(p) {
+  const newRole    = p.NEW_ROLE || p.ROLE;
+  const effectDate = p.EFFECT_DATE || p.JOINING;
   return `
 <p class="salutation">Dear <strong>${p.NAME}</strong>,</p>
-<p>In recognition of your exceptional performance, dedication, and leadership contributions, we are delighted to promote you to the position of <strong>${p.ROLE}</strong> within the <strong>${p.DEPT}</strong> department at <span class="co">Corvus Studio</span>, effective from <strong>${p.JOINING}</strong>.</p>
-<p>In this elevated capacity, you will assume oversight and leadership of <strong>${p.ROLE}</strong> functions, including ${p.RESPONSIBILITIES}. You will also work closely with project directors to optimize team workflows and production schedules.</p>
-<p>Consequent to your promotion, your monthly compensation is revised to <strong>${p.STIPEND}</strong>. All other terms of your employment, including confidentiality and proprietary work covenants, remain unchanged.</p>
-<p>We congratulate you on this milestone and are confident that you will continue to guide the studio towards outstanding creative success.</p>`;
+<p>We are delighted to inform you that based on your performance, contributions, and demonstrated capabilities, you have been promoted to the position of <strong>${newRole}</strong> in the <strong>${p.DEPT}</strong> team, effective <strong>${effectDate}</strong>.</p>
+<table class="doc-table">
+  <tr><td>Employee Name</td><td>${p.NAME}</td></tr>
+  <tr><td>Employee ID</td><td>${p.DOC_ID}</td></tr>
+  <tr><td>Previous Designation</td><td>${p.ROLE}</td></tr>
+  <tr><td>New Designation</td><td>${newRole}</td></tr>
+  <tr><td>Department</td><td>${p.DEPT}</td></tr>
+  <tr><td>Effective Date</td><td>${effectDate}</td></tr>
+  <tr><td>Revised Gross Monthly</td><td>${p.STIPEND !== 'unpaid' ? 'INR ' + p.STIPEND + ' per month' : 'As agreed'}</td></tr>
+  <tr><td>Reporting To</td><td>${p.MANAGER}</td></tr>
+</table>
+<p>Your new role comes with expanded responsibilities as communicated by your reporting lead. All other terms and conditions of your employment remain unchanged unless expressly modified herein.</p>
+<p>We are confident in your ability to excel in this role and look forward to your continued contributions to <span class="co">Corvus Studio</span>.</p>`;
 }
 
 function resignationAcceptanceLetterContent(p) {
+  const resignDate  = p.RESIGN_DATE || p.DATE;
+  const lastWorkDay = p.END_DATE;
   return `
 <p class="salutation">Dear <strong>${p.NAME}</strong>,</p>
-<p>We are writing to formally accept your resignation from the position of <strong>${p.ROLE}</strong> within the <strong>${p.DEPT}</strong> department at <span class="co">Corvus Studio</span>, which was submitted on <strong>${p.DATE}</strong>.</p>
-<p>Your resignation has been accepted and you will be relieved from your duties at the close of business hours on <strong>${p.END_DATE}</strong>. You are requested to complete all pending handovers of assets, code repositories, design files, and documentation to your team lead prior to your departure.</p>
-<p>Your final settlement, including any outstanding dues and relieving certificates, will be processed and disbursed in due course following your clear clearance from all departments.</p>
-<p>We thank you for your contributions to Corvus Studio and wish you success in your future endeavors.</p>`;
+<p>We acknowledge receipt of your resignation letter dated <strong>${resignDate}</strong>. After due consideration, we hereby accept your resignation from the position of <strong>${p.ROLE}</strong> in the <strong>${p.DEPT}</strong> team with Corvus Studio.</p>
+<table class="doc-table">
+  <tr><td>Employee Name</td><td>${p.NAME}</td></tr>
+  <tr><td>Employee ID</td><td>${p.DOC_ID}</td></tr>
+  <tr><td>Designation</td><td>${p.ROLE}</td></tr>
+  <tr><td>Department</td><td>${p.DEPT}</td></tr>
+  <tr><td>Resignation Date</td><td>${resignDate}</td></tr>
+  <tr><td>Last Working Date</td><td>${lastWorkDay}</td></tr>
+</table>
+<p>You are requested to complete the handover of all assigned responsibilities, project files, access credentials, and company assets before your last working date. Please co-ordinate with your reporting lead to ensure a structured and complete handover.</p>
+<p>The full and final settlement of your dues, including salary up to the last working date, earned leave encashment (if applicable), and any applicable deductions, will be processed within thirty (30) days of your last working date.</p>
+<p>We thank you for your contributions to <span class="co">Corvus Studio</span> and wish you the very best in your future endeavours.</p>`;
 }
 
 function fullAndFinalSettlementLetterContent(p) {
+  const lastWorkDay = p.END_DATE;
   return `
 <p class="salutation">Dear <strong>${p.NAME}</strong>,</p>
-<p>This letter details the final settlement of your accounts with <span class="co">Corvus Studio</span> following the conclusion of your services as <strong>${p.ROLE}</strong> in the <strong>${p.DEPT}</strong> department on <strong>${p.END_DATE}</strong>.</p>
-<p>We confirm that all outstanding dues, salary payments, and reimbursements have been computed and settled. The final net payable amount of <strong>${p.STIPEND}</strong> has been disbursed to your registered bank account, and all department clearances have been successfully processed.</p>
-<p>With this payment, all financial and operational obligations between you and <span class="co">Corvus Studio</span> are fully resolved. We thank you for your cooperation during the offboarding process and wish you all the best in your career.</p>`;
+<p>With reference to your separation from <span class="co">Corvus Studio</span> effective <strong>${lastWorkDay}</strong>, we are pleased to inform you that your full and final settlement has been computed as follows:</p>
+<table class="doc-table">
+  <tr><td>Employee Name</td><td>${p.NAME}</td></tr>
+  <tr><td>Employee ID</td><td>${p.DOC_ID}</td></tr>
+  <tr><td>Designation</td><td>${p.ROLE}</td></tr>
+  <tr><td>Last Working Date</td><td>${lastWorkDay}</td></tr>
+  <tr><td>Net Payable Amount</td><td>${p.STIPEND !== 'unpaid' ? 'INR ' + p.STIPEND : 'As computed'}</td></tr>
+  <tr><td>Mode of Payment</td><td>Bank Transfer</td></tr>
+</table>
+<p>The above settlement is in full and final satisfaction of all dues, claims, and entitlements arising from your employment with <span class="co">Corvus Studio</span>. By accepting this settlement, you confirm that you have no outstanding claims against Corvus Studio.</p>
+<p>Please sign and return the acknowledgement below. All company assets, access credentials, and confidential data must be fully returned or deleted before settlement is released.</p>`;
 }
 
 function noObjectionCertificateContent(p) {
+  const nocPurpose = p.NOC_PURPOSE || 'professional purposes';
   return `
-<p class="salutation">TO WHOMSOEVER IT MAY CONCERN,</p>
-<p>This is to certify that <strong>${p.NAME}</strong> is employed with <span class="co">Corvus Studio</span> as a <strong>${p.ROLE}</strong> within the <strong>${p.DEPT}</strong> department, since <strong>${p.JOINING}</strong>.</p>
-<p>The studio hereby states that it has no objection to <strong>${p.NAME}</strong> pursuing higher education / applying for a visa / participating in external educational events, and supports their professional development.</p>
-<p>This certificate is issued at the request of the employee and is valid for the purposes of verification.</p>`;
+<p class="salutation">To Whom It May Concern,</p>
+<p>This is to certify that <strong>${p.NAME}</strong> (Employee ID: <strong>${p.DOC_ID}</strong>), currently employed with <span class="co">Corvus Studio</span> as <strong>${p.ROLE}</strong> in the <strong>${p.DEPT}</strong> team, has sought a No Objection Certificate from the Company for the purpose of <strong>${nocPurpose}</strong>.</p>
+<table class="doc-table">
+  <tr><td>Employee Name</td><td>${p.NAME}</td></tr>
+  <tr><td>Employee ID</td><td>${p.DOC_ID}</td></tr>
+  <tr><td>Designation</td><td>${p.ROLE}</td></tr>
+  <tr><td>Department</td><td>${p.DEPT}</td></tr>
+  <tr><td>Date of Joining</td><td>${p.JOINING}</td></tr>
+  <tr><td>NOC Purpose</td><td>${nocPurpose}</td></tr>
+</table>
+<p><span class="co">Corvus Studio</span> has no objection to <strong>${p.NAME}</strong> pursuing the above purpose, provided that such activity does not conflict with the employee's duties, obligations, and confidentiality commitments to Corvus Studio as set out in the Employee NDA and Employment Agreement.</p>
+<p>This certificate is issued in good faith and is valid only for the stated purpose.</p>`;
 }
 
 function appreciationLetterContent(p) {
   return `
 <p class="salutation">Dear <strong>${p.NAME}</strong>,</p>
-<p>We are writing to express our sincere appreciation for your exemplary performance and dedication as a <strong>${p.ROLE}</strong> in the <strong>${p.DEPT}</strong> department at <span class="co">Corvus Studio</span>.</p>
-<p>Your recent contributions, particularly regarding asset creation and pipeline optimization, have been key to the success of our projects. Your ability to consistently deliver high-quality work, solve creative issues, and support fellow team members represents the standard of excellence we value at Corvus Studio.</p>
-<p>We thank you for your commitment and outstanding effort. We are proud to have you on our team and look forward to achieving many more creative milestones together.</p>`;
+<p>On behalf of <span class="co">Corvus Studio</span>, I wish to extend my sincere appreciation for your outstanding contribution to the team during the recent period.</p>
+<p>Your dedication, creativity, and technical excellence have made a meaningful difference to the quality and reputation of our work. The consistent delivery of high-quality output, combined with your collaborative approach and professional conduct, is a true reflection of the values we uphold at Corvus Studio.</p>
+<p>We encourage you to continue bringing this level of commitment to your work. Your contributions are recognized and valued by the entire team.</p>`;
 }
 
 function warningLetterContent(p) {
   return `
 <p class="salutation">Dear <strong>${p.NAME}</strong>,</p>
-<p>This is a formal warning letter regarding your performance and/or conduct in the capacity of <strong>${p.ROLE}</strong> in the <strong>${p.DEPT}</strong> department at <span class="co">Corvus Studio</span>.</p>
-<p>It has been observed that your recent deliverables and attendance patterns have fell short of the professional standards expected of your designation, specifically concerning project handovers and deadlines. This is causing unexpected blockages in the production pipeline.</p>
-<p>You are hereby advised to take immediate corrective measures. You are expected to show significant improvement in your outputs and general conduct starting from <strong>${p.JOINING}</strong>. Failure to do so may lead to further disciplinary action, up to and including termination of your engagement.</p>
-<p>Please connect with your manager immediately to establish a Performance Improvement Plan (PIP).</p>`;
+<p>This letter serves as a formal written warning following an internal review of a matter concerning your performance and/or conduct in your capacity as <strong>${p.ROLE}</strong> in the <strong>${p.DEPT}</strong> department at <span class="co">Corvus Studio</span>.</p>
+<table class="doc-table">
+  <tr><td>Employee Name</td><td>${p.NAME}</td></tr>
+  <tr><td>Employee ID</td><td>${p.DOC_ID}</td></tr>
+  <tr><td>Designation</td><td>${p.ROLE}</td></tr>
+  <tr><td>Department</td><td>${p.DEPT}</td></tr>
+</table>
+<p><strong>Company's Position</strong></p>
+<p>The observed conduct and/or performance is in violation of the Corvus Studio Employee Manual and the standards expected of all employees. This behaviour is unacceptable and cannot be tolerated.</p>
+<p><strong>Action Required</strong></p>
+<p>You are hereby required to immediately correct the stated behaviour, improve your performance, and maintain the expected professional standards. Failure to do so may result in further disciplinary action, up to and including termination of employment.</p>
+<p>This letter is being placed on record. You are advised to treat this matter with the seriousness it warrants.</p>`;
 }
 
 function showCauseNoticeContent(p) {
   return `
 <p class="salutation">Dear <strong>${p.NAME}</strong>,</p>
-<p>This is a formal Show Cause Notice issued regarding recent observations of non-compliance with the studio's operational guidelines, specifically concerning persistent unexcused absences and failure to meet key deliverables for active projects.</p>
-<p>As a <strong>${p.ROLE}</strong> in the <strong>${p.DEPT}</strong> department, you are expected to maintain professional code of conduct and coordinate with your manager. Your recent actions have led to delays in the studio's production schedules.</p>
-<p>You are hereby required to submit a written explanation showing cause why disciplinary action should not be initiated against you, within forty-eight (48) hours of receipt of this notice. Failure to respond or provide a satisfactory explanation will result in appropriate action as per the studio's HR policy.</p>`;
+<p>This Show Cause Notice is issued to you pursuant to an internal inquiry conducted by <span class="co">Corvus Studio</span> regarding matters concerning your conduct and/or performance in your capacity as <strong>${p.ROLE}</strong> in the <strong>${p.DEPT}</strong> department. You are required to respond within the prescribed period.</p>
+<table class="doc-table">
+  <tr><td>Employee Name</td><td>${p.NAME}</td></tr>
+  <tr><td>Employee ID</td><td>${p.DOC_ID}</td></tr>
+  <tr><td>Designation</td><td>${p.ROLE}</td></tr>
+  <tr><td>Department</td><td>${p.DEPT}</td></tr>
+  <tr><td>Notice Date</td><td>${p.DATE}</td></tr>
+  <tr><td>Response Deadline</td><td>Within 5–7 working days from receipt of this notice</td></tr>
+</table>
+<p><strong>Your Response is Required</strong></p>
+<p>You are hereby called upon to submit a written explanation addressing the matters raised and explaining why disciplinary action should not be initiated against you. Your response must be addressed to the Founder &amp; CEO, Corvus Studio, and submitted within the stated deadline.</p>
+<p>Failure to respond within the specified period will be treated as an admission of the allegations and may result in disciplinary action, including but not limited to termination of employment, without further notice.</p>
+<p>The Company reserves all rights to conduct further inquiry or take any action it deems appropriate in accordance with applicable law and the terms of your Employment Agreement.</p>`;
 }
 
 function probationExtensionLetterContent(p) {
   return `
 <p class="salutation">Dear <strong>${p.NAME}</strong>,</p>
-<p>This is to inform you that your probation period at <span class="co">Corvus Studio</span> as <strong>${p.ROLE}</strong> in the <strong>${p.DEPT}</strong> department has been extended by a duration of <strong>${p.DURATION}</strong>, now concluding on <strong>${p.END_DATE}</strong>.</p>
-<p>While we appreciate your efforts during the initial probation period, we believe that further time is required to evaluate your consistency, technical output, and integration into the team workflow. This extension is intended to provide you with the opportunity to address these areas and meet our standard benchmarks.</p>
-<p>Your performance will be closely reviewed during this extended period, and a formal review will be conducted on or before the new end date to determine the confirmation of your employment status.</p>`;
+<p>With reference to your employment with <span class="co">Corvus Studio</span> as <strong>${p.ROLE}</strong> in the <strong>${p.DEPT}</strong> team, we wish to inform you of the following regarding your probation period.</p>
+<p>After reviewing your performance during the initial probation period, the Company has determined that an extension is required before a confirmation decision is made.</p>
+<table class="doc-table">
+  <tr><td>Employee Name</td><td>${p.NAME}</td></tr>
+  <tr><td>Employee ID</td><td>${p.DOC_ID}</td></tr>
+  <tr><td>Designation</td><td>${p.ROLE}</td></tr>
+  <tr><td>Department</td><td>${p.DEPT}</td></tr>
+  <tr><td>Date of Joining</td><td>${p.JOINING}</td></tr>
+  <tr><td>Extended Probation Period</td><td>${p.DURATION}</td></tr>
+  <tr><td>Revised End Date</td><td>${p.END_DATE}</td></tr>
+</table>
+<p><strong>Performance Improvement Expectations</strong></p>
+<p>During the extended probation period, you are expected to demonstrate improvement in consistency, technical output, and integration into the team workflow. Your performance will be reviewed again at the end of the extended probation period. A satisfactory review will result in confirmation of your employment. Continued unsatisfactory performance may result in termination of employment.</p>
+<p>All other terms and conditions of your Appointment Letter and the Corvus Studio Employee Manual continue to apply during the extended period.</p>
+<p>Please sign and return a copy of this letter as your acknowledgement.</p>`;
 }
 
 export function generateOfferLetterHtml(employee, documentId, options = {}) {
