@@ -988,7 +988,7 @@ app.on('POST', ['/api/v1/auth/verify-otp', '/auth/verify-otp'], async (c) => {
   return c.json({
     status: 'success',
     accessToken,
-    refreshToken,
+    // refreshToken intentionally NOT returned in body — it is stored in HttpOnly cookie only
     user: {
       id: user.id,
       fullName: user.full_name,
@@ -1215,7 +1215,8 @@ app.on('GET', ['/api/v1/admin/employees/ex', '/admin/employees/ex'], auth, async
 // ─── Holiday Routes ──────────────────────────────────────────────────────────
 
 app.on('GET', ['/api/v1/holiday/upcoming', '/holiday/upcoming'], auth, async (c) => {
-  const limit = parseInt(c.req.query('limit')) || 4;
+  const rawLimit = parseInt(c.req.query('limit'));
+  const limit = (!isNaN(rawLimit) && rawLimit > 0) ? Math.min(rawLimit, 20) : 4;
   const today = new Date().toISOString().split('T')[0];
 
   const result = await c.env.DB.prepare(
@@ -1595,6 +1596,19 @@ app.on('PATCH', ['/api/v1/leave/:id/medical-document', '/leave/:id/medical-docum
     return c.json({ status: 'fail', message: 'Medical document path / URL is required.' }, 400);
   }
 
+  // SECURITY: Verify ownership FIRST before any further validation to prevent IDOR
+  const request = await c.env.DB.prepare(
+    `SELECT * FROM leave_requests WHERE id = ? LIMIT 1`
+  ).bind(id).first();
+
+  if (!request) {
+    return c.json({ status: 'fail', message: 'Leave request not found.' }, 404);
+  }
+
+  if (request.employee_id !== jwtUser.userId) {
+    return c.json({ status: 'fail', message: 'You do not have permission to update this leave request.' }, 403);
+  }
+
   // Validate file format: only PDF, JPG, JPEG, PNG are accepted
   const allowedExtensions = ['.pdf', '.jpg', '.jpeg', '.png'];
   const urlLower = medicalDocumentPath.toLowerCase().split('?')[0]; // strip query params
@@ -1626,18 +1640,6 @@ app.on('PATCH', ['/api/v1/leave/:id/medical-document', '/leave/:id/medical-docum
     } catch (e) {
       return c.json({ status: 'fail', message: 'Invalid document URL format.' }, 400);
     }
-  }
-
-  const request = await c.env.DB.prepare(
-    `SELECT * FROM leave_requests WHERE id = ? LIMIT 1`
-  ).bind(id).first();
-
-  if (!request) {
-    return c.json({ status: 'fail', message: 'Leave request not found.' }, 404);
-  }
-
-  if (request.employee_id !== jwtUser.userId) {
-    return c.json({ status: 'fail', message: 'You do not have permission to update this leave request.' }, 403);
   }
 
   const requestDate = new Date(request.created_at);
@@ -1721,6 +1723,15 @@ app.on('POST', ['/api/v1/admin/employee', '/admin/employee'], auth, requireRole(
 
   if (!fullName || !workEmail || !role) {
     return c.json({ status: 'fail', message: 'fullName, workEmail, and role are required.' }, 400);
+  }
+
+  if (typeof fullName !== 'string' || fullName.trim().length === 0 || fullName.length > 100) {
+    return c.json({ status: 'fail', message: 'fullName must be a non-empty string of at most 100 characters.' }, 400);
+  }
+
+  const allowedRolesCreate = ['employee', 'manager', 'senior_manager', 'admin'];
+  if (!allowedRolesCreate.includes(role)) {
+    return c.json({ status: 'fail', message: 'Invalid role value.' }, 400);
   }
 
   const normalizedEmail = workEmail.toLowerCase().trim();
@@ -1825,20 +1836,55 @@ app.on('PATCH', ['/api/v1/admin/employee/:id', '/admin/employee/:id'], auth, req
     return c.json({ status: 'fail', message: 'Only the super admin Raj can update roles and permissions.' }, 403);
   }
 
+  // Input length and format validation
+  if (fullName !== undefined && (typeof fullName !== 'string' || fullName.trim().length === 0 || fullName.length > 100)) {
+    return c.json({ status: 'fail', message: 'fullName must be a non-empty string of at most 100 characters.' }, 400);
+  }
+  if (designation !== undefined && designation !== null && typeof designation === 'string' && designation.length > 100) {
+    return c.json({ status: 'fail', message: 'designation must be at most 100 characters.' }, 400);
+  }
+  if (department !== undefined && department !== null && typeof department === 'string' && department.length > 100) {
+    return c.json({ status: 'fail', message: 'department must be at most 100 characters.' }, 400);
+  }
+  if (contactNumber !== undefined && contactNumber !== null && typeof contactNumber === 'string' && contactNumber.length > 20) {
+    return c.json({ status: 'fail', message: 'contactNumber must be at most 20 characters.' }, 400);
+  }
+  if (personalEmail !== undefined && personalEmail !== null && personalEmail !== '') {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(personalEmail) || personalEmail.length > 200) {
+      return c.json({ status: 'fail', message: 'Invalid personal email format.' }, 400);
+    }
+  }
+  const dateRegexFull = /^\d{4}-\d{2}-\d{2}$/;
+  if (joiningDate !== undefined && joiningDate !== null && joiningDate !== '' && !dateRegexFull.test(joiningDate)) {
+    return c.json({ status: 'fail', message: 'joiningDate must be in YYYY-MM-DD format.' }, 400);
+  }
+  if (dob !== undefined && dob !== null && dob !== '' && !dateRegexFull.test(dob)) {
+    return c.json({ status: 'fail', message: 'dob must be in YYYY-MM-DD format.' }, 400);
+  }
+  const allowedRoles = ['employee', 'manager', 'senior_manager', 'admin'];
+  if (role !== undefined && !allowedRoles.includes(role)) {
+    return c.json({ status: 'fail', message: 'Invalid role value.' }, 400);
+  }
+  const allowedStatuses = ['active', 'inactive'];
+  if (status !== undefined && !allowedStatuses.includes(status)) {
+    return c.json({ status: 'fail', message: 'Invalid status value.' }, 400);
+  }
+
   let query = 'UPDATE users SET ';
   const params = [];
   const updates = [];
 
-  if (fullName !== undefined) { updates.push('full_name = ?'); params.push(fullName); }
+  if (fullName !== undefined) { updates.push('full_name = ?'); params.push(fullName.trim()); }
   if (role !== undefined) { updates.push('role = ?'); params.push(role); }
   if (designation !== undefined) { updates.push('designation = ?'); params.push(designation); }
   if (department !== undefined) { updates.push('department = ?'); params.push(department); }
   if (employeeType !== undefined) { updates.push('employee_type = ?'); params.push(employeeType); }
-  if (joiningDate !== undefined) { updates.push('joining_date = ?'); params.push(joiningDate); }
+  if (joiningDate !== undefined) { updates.push('joining_date = ?'); params.push(joiningDate || null); }
   if (contactNumber !== undefined) { updates.push('contact_number = ?'); params.push(contactNumber); }
   if (status !== undefined) { updates.push('status = ?'); params.push(status); }
-  if (personalEmail !== undefined) { updates.push('personal_email = ?'); params.push(personalEmail); }
-  if (dob !== undefined) { updates.push('dob = ?'); params.push(dob); }
+  if (personalEmail !== undefined) { updates.push('personal_email = ?'); params.push(personalEmail || null); }
+  if (dob !== undefined) { updates.push('dob = ?'); params.push(dob || null); }
 
   if (canApproveLeaves !== undefined) { updates.push('can_approve_leaves = ?'); params.push(canApproveLeaves ? 1 : 0); }
   if (canManageDocuments !== undefined) { updates.push('can_manage_documents = ?'); params.push(canManageDocuments ? 1 : 0); }
@@ -1926,12 +1972,26 @@ app.on('PATCH', ['/api/v1/admin/email-templates/:id', '/admin/email-templates/:i
     return c.json({ status: 'fail', message: 'Subject and html_body required' }, 400);
   }
 
+  // Input length validation
+  if (typeof body.subject !== 'string' || body.subject.length > 300) {
+    return c.json({ status: 'fail', message: 'Subject must be a string of at most 300 characters.' }, 400);
+  }
+  if (typeof body.html_body !== 'string' || body.html_body.length > 50000) {
+    return c.json({ status: 'fail', message: 'html_body must be a string of at most 50,000 characters.' }, 400);
+  }
+
+  // Only allow safe template placeholders — block <script> and on* event attributes
+  const dangerousPatterns = /<script[\s>]/i;
+  if (dangerousPatterns.test(body.html_body)) {
+    return c.json({ status: 'fail', message: 'Template contains disallowed script tags.' }, 400);
+  }
+
   try {
     await c.env.DB.prepare(`
       UPDATE email_templates 
       SET subject = ?, html_body = ?, updated_at = CURRENT_TIMESTAMP
       WHERE id = ?
-    `).bind(body.subject, body.html_body, id).run();
+    `).bind(body.subject.trim(), body.html_body, id).run();
 
     return c.json({ status: 'success', message: 'Template updated successfully' });
   } catch (err) {
@@ -1998,8 +2058,11 @@ app.on('GET', ['/api/v1/analytics/monthly', '/analytics/monthly'], auth, async (
     `SELECT id, role, department, work_email FROM users WHERE id = ? LIMIT 1`
   ).bind(jwtUser.userId).first();
 
-  const month = parseInt(c.req.query('month')) || new Date().getMonth() + 1;
-  const year  = parseInt(c.req.query('year'))  || new Date().getFullYear();
+  const rawMonth = parseInt(c.req.query('month'));
+  const rawYear  = parseInt(c.req.query('year'));
+  const now = new Date();
+  const month = (!isNaN(rawMonth) && rawMonth >= 1 && rawMonth <= 12) ? rawMonth : (now.getMonth() + 1);
+  const year  = (!isNaN(rawYear)  && rawYear  >= 2020 && rawYear  <= 2100) ? rawYear  : now.getFullYear();
 
   const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
   const lastDay   = new Date(year, month, 0).getDate();
