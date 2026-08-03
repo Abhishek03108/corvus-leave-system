@@ -373,7 +373,7 @@ export function getResponsibilitiesText(roleName) {
   return `delivering professional, high-quality work aligned with the studio's active project requirements. This will include collaborating with the creative and production teams on assigned tasks, meeting agreed deadlines, maintaining organised and version-controlled project files, participating in regular review sessions, and performing any other duties reasonably required in connection with your role at Corvus Studio.`;
 }
 
-// â”€â”€â”€ CSS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── CSS ──────────────────────────────────────────────────────────────────────
 const CSS = `
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,700;1,400&display=swap');
 
@@ -590,9 +590,9 @@ html::-webkit-scrollbar, body::-webkit-scrollbar, *::-webkit-scrollbar {
 .acc-body p {
   font-family: 'Times New Roman', serif;
   font-size: 10.5pt;
-  line-height: 1.45;
+  line-height: 1.5;
   text-align: justify;
-  margin-bottom: 8px;
+  margin-bottom: 12px;
 }
 .acc-field {
   display: flex;
@@ -614,13 +614,14 @@ html::-webkit-scrollbar, body::-webkit-scrollbar, *::-webkit-scrollbar {
 .doc-table {
   width: 100%;
   border-collapse: collapse;
-  margin: 12px 0;
+  margin: 16px 0;
   font-size: 10.5pt;
 }
 .doc-table td {
-  padding: 6px 10px;
+  padding: 8px 12px;
   border: 1px solid #ccc;
   vertical-align: top;
+  line-height: 1.45;
 }
 .doc-table tr td:first-child {
   font-weight: 600;
@@ -632,7 +633,7 @@ html::-webkit-scrollbar, body::-webkit-scrollbar, *::-webkit-scrollbar {
 
 /* ─── Salary Breakdown Table (Page 2) ─── */
 .breakdown-table { width: 100%; border-collapse: collapse; margin-top: 15px; font-family: sans-serif; font-size: 10pt; }
-.breakdown-table td, .breakdown-table th { border: 1px solid #ccc; padding: 6px; }
+.breakdown-table td, .breakdown-table th { border: 1px solid #ccc; padding: 8px 10px; line-height: 1.4; }
 .breakdown-table .amount { text-align: right; }
 .total-row { font-weight: bold; background: #f0f0f0; }
 .net-row { font-weight: bold; }
