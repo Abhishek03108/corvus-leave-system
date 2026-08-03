@@ -5,7 +5,7 @@
  * - Header: C-mark logo + "CORVUS STUDIO" (DM Sans Bold) | "Motion that Speaks." (DM Sans 15.4pt) + Date
  * - Body: Times New Roman 11pt, justified
  * - Footer: Black bg, white YASH CORPORATION text
- * - 2 pages total: Page 1 = letter, Page 2 = acceptance
+ * - 3 pages total: Page 1 = letter, Page 2 = salary breakdown, Page 3 = acceptance
  */
 
 const LOGO_FULL = 'data:image/png;base64,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'; // full logo (C-mark + CORVUS STUDIO text)
@@ -584,6 +584,17 @@ html::-webkit-scrollbar, body::-webkit-scrollbar, *::-webkit-scrollbar {
   color: #333;
 }
 
+
+/* ─── Salary Breakdown Table (Page 2) ─── */
+.breakdown-table { width: 100%; border-collapse: collapse; margin-top: 15px; font-family: sans-serif; font-size: 10pt; }
+.breakdown-table td, .breakdown-table th { border: 1px solid #ccc; padding: 6px; }
+.breakdown-table .amount { text-align: right; }
+.total-row { font-weight: bold; background: #f0f0f0; }
+.net-row { font-weight: bold; }
+.net-row.highlight { background: #fff8e1; }
+.net-amount { color: #d00; }
+.breakdown-note { font-size: 9pt; margin-top: 10px; color: #555; }
+
 @media print {
   html, body { margin: 0; padding: 0; width: 210mm; height: 297mm; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
   .page, .page-2 { width: 210mm; height: 297mm; margin: 0; border: none; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
@@ -614,8 +625,14 @@ export function renderDocument(p, title, bodyContent, documentType = 'Offer Lett
   const requiresAck = ACK_DOC_TYPES.includes(documentType);
 
   let page2Content = '';
+  let page3Content = '';
   if (isOfferLetter) {
-    page2Content = acceptancePage(p, `I understand and accept the terms outlined in this offer letter${p.DURATION && p.DURATION !== 'four (4) months' ? `, including the duration of ${p.DURATION}` : ''}. Either party may conclude this engagement with the prior notice period mentioned above.`);
+        // Page 2 = salary breakdown (only for paid roles)
+    if (p.MONTHLY_CTC || p.STIPEND !== 'unpaid') {
+      page2Content = salaryBreakdownPage(p);
+    }
+    // Page 3 = acceptance
+    page3Content = acceptancePage(p, `I understand and accept the terms outlined in this offer letter${p.DURATION && p.DURATION !== 'four (4) months' ? `, including the duration of ${p.DURATION}` : ''}. Either party may conclude this engagement with the prior notice period mentioned above.`);
   } else if (requiresAck) {
     page2Content = `
 <div class="page-2">
@@ -694,6 +711,7 @@ ${page1Content}
   ${FOOTER}
 </div>
 ${page2Content}
+${page3Content}
 </body>
 </html>`;
 }
@@ -722,7 +740,84 @@ const FOOTER = `
   Shop No - 04, ALPHONNE COMPLEX, NR PRIMARY SCHOOL, JHALIRAJDA, Junagadh, Gujarat, 360022
 </div>`;
 
-// ─── Page 2: Acceptance ───────────────────────────────────────────────────────
+
+// ─── Page 2: Salary Breakdown ────────────────────────────────────────────────
+function salaryBreakdownPage(p) {
+  const ctc        = Number(p.MONTHLY_CTC || p.STIPEND) || 0;
+  const annual     = Number(p.ANNUAL_CTC)  || ctc * 12;
+  const basic      = Number(p.BASIC_SALARY) || Math.round(ctc * 0.4);
+  const hra        = Number(p.HRA)          || Math.round(ctc * 0.2);
+  const special    = Number(p.SPECIAL_ALLOWANCE) || Math.max(0, ctc - basic - hra);
+  const employerPF = Number(p.EMPLOYER_PF) || Math.round(basic * 0.12);
+  const employeePF = Number(p.EMPLOYEE_PF) || Math.round(basic * 0.12);
+  const gross      = basic + hra + special;
+  const deductions = employeePF;
+  const net        = gross - deductions;
+
+  const fmt = n => n.toLocaleString('en-IN');
+
+  return `
+<div class="page-2">
+  <img src="${LOGO_MARK}" class="wm" alt="">
+  ${headerBlock(p.DATE, p.DOC_ID)}
+  <div class="content">
+    <div class="acc-title">SALARY BREAKDOWN</div>
+    <div class="acc-body">
+      <p>This document sets out the detailed salary structure for <strong>${p.NAME}</strong> in the role of <strong>${p.ROLE}</strong>, effective from <strong>${p.JOINING}</strong>.</p>
+    </div>
+
+    <table class="breakdown-table">
+      <thead>
+        <tr><th colspan="2">Earnings</th><th colspan="2">Deductions</th></tr>
+        <tr>
+          <td class="label">Component</td><td class="amount">Monthly (INR)</td>
+          <td class="label">Component</td><td class="amount">Monthly (INR)</td>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Basic Salary</td><td class="amount">&#8377;&nbsp;${fmt(basic)}</td>
+          <td>Employee PF (12%)</td><td class="amount">&#8377;&nbsp;${fmt(employeePF)}</td>
+        </tr>
+        <tr>
+          <td>House Rent Allowance (HRA)</td><td class="amount">&#8377;&nbsp;${fmt(hra)}</td>
+          <td></td><td></td>
+        </tr>
+        <tr>
+          <td>Special Allowance</td><td class="amount">&#8377;&nbsp;${fmt(special)}</td>
+          <td></td><td></td>
+        </tr>
+      </tbody>
+      <tfoot>
+        <tr class="total-row">
+          <td>Gross Salary</td><td class="amount">&#8377;&nbsp;${fmt(gross)}</td>
+          <td>Total Deductions</td><td class="amount">&#8377;&nbsp;${fmt(deductions)}</td>
+        </tr>
+        <tr class="net-row">
+          <td colspan="2"><strong>Monthly CTC (INR)</strong></td>
+          <td colspan="2" class="amount"><strong>&#8377;&nbsp;${fmt(ctc)}</strong></td>
+        </tr>
+        <tr class="net-row highlight">
+          <td colspan="2"><strong>Net Monthly Salary (Take-Home)</strong></td>
+          <td colspan="2" class="amount net-amount"><strong>&#8377;&nbsp;${fmt(net)}</strong></td>
+        </tr>
+        <tr class="net-row">
+          <td colspan="2">Annual CTC</td>
+          <td colspan="2" class="amount">&#8377;&nbsp;${fmt(annual)}</td>
+        </tr>
+      </tfoot>
+    </table>
+
+    <div class="breakdown-note">
+      <p><strong>Note:</strong> The above salary structure is for reference only. Actual take-home may vary subject to applicable statutory deductions (PF, PT, TDS) and any other deductions as per company policy. The <strong>Net Monthly Salary</strong> of <strong>INR ${fmt(net)}</strong> represents the amount credited to your bank account each month.</p>
+      <p>Employer PF contribution of <strong>INR ${fmt(employerPF)}</strong> per month is borne by Corvus Studio and forms part of your CTC.</p>
+    </div>
+  </div>
+  ${FOOTER}
+</div>`;
+}
+
+// ─── Page 3: Acceptance ───────────────────────────────────────────────────────
 function acceptancePage(p, note) {
   return `
 <div class="page-2">
@@ -828,7 +923,7 @@ function fulltimeBody(p) {
   return `
 <p class="salutation">Dear <strong>${p.NAME}</strong>,</p>
 <p>On behalf of <span class="co">Corvus Studio</span>, we are delighted to extend this formal offer of employment for the position of <strong>${p.ROLE}</strong> within the <strong>${p.DEPT}</strong> team, effective from <strong>${p.JOINING}</strong>. You will be reporting to <strong>${p.MANAGER}</strong>.</p>
-<p>Your monthly compensation for this role will be <strong>${p.STIPEND}</strong>, payable in accordance with the Studio's standard payroll cycle. This offer is conditional upon the successful completion of any applicable background verification and onboarding documentation.</p>
+<p>Your monthly compensation for this role will be <strong>${p.STIPEND}</strong> (Monthly CTC), with a net take-home salary of <strong>INR ${p.NET_SALARY ? Number(p.NET_SALARY).toLocaleString('en-IN') : p.STIPEND}</strong> per month, payable in accordance with the Studio's standard payroll cycle. A detailed salary breakdown is enclosed as Page 2 of this letter. This offer is conditional upon the successful completion of any applicable background verification and onboarding documentation.</p>
 <p>Your work location will be <strong>${p.LOCATION}</strong>. Your standard working hours and schedule will be communicated separately by your reporting manager as part of the onboarding process.</p>
 <p>Your responsibilities will focus on <strong>${p.ROLE}</strong> duties, including ${p.RESPONSIBILITIES}, along with cross-departmental collaboration, and any other tasks assigned in connection with your designation.</p>
 <p>Your employment will begin with a probationary period of <strong>three (3) months</strong> from your date of joining. During this period, either party may terminate this engagement with a minimum notice of fifteen (15) days. Upon successful completion of probation, your employment will be confirmed in writing.</p>
@@ -856,7 +951,7 @@ function parttimeBody(p) {
   return `
 <p class="salutation">Dear <strong>${p.NAME}</strong>,</p>
 <p>On behalf of <span class="co">Corvus Studio</span>, we are pleased to extend this formal offer of employment for the position of <strong>${p.ROLE}</strong> (Part-time) within the <strong>${p.DEPT}</strong> team, effective from <strong>${p.JOINING}</strong>. You will report to <strong>${p.MANAGER}</strong>.</p>
-<p>Your compensation for this role will be <strong>${p.STIPEND}</strong> per month, payable in accordance with the Studio's standard payroll cycle. You are expected to dedicate approximately twenty (20) hours per week to your responsibilities.</p>
+<p>Your compensation for this role will be <strong>${p.STIPEND}</strong> (Monthly CTC) per month, with a net take-home salary of <strong>INR ${p.NET_SALARY ? Number(p.NET_SALARY).toLocaleString('en-IN') : p.STIPEND}</strong>, payable in accordance with the Studio's standard payroll cycle. A detailed salary breakdown is enclosed as Page 2 of this letter. You are expected to dedicate approximately twenty (20) hours per week to your responsibilities.</p>
 <p>Your work location will be <strong>${p.LOCATION}</strong>. Your schedule will be arranged flexibly based on mutual availability and project requirements.</p>
 <p>Your responsibilities will focus on <strong>${p.ROLE}</strong> duties, including ${p.RESPONSIBILITIES}, and any other tasks assigned in connection with your designation.</p>
 <p>Your employment will begin with a probationary period of <strong>three (3) months</strong>. During this period, either party may terminate this engagement with a minimum notice of fifteen (15) days.</p>
