@@ -124,7 +124,7 @@ async function sendOtpEmail(apiKey, to, otp) {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      from: 'Corvus Leave System <noreply@thecorvusstudio.com>',
+      from: 'Corvus Studio <noreply@thecorvusstudio.com>',
       to,
       subject: 'Your OTP for Corvus Leave System',
       html: `
@@ -155,7 +155,7 @@ async function sendOtpEmail(apiKey, to, otp) {
 async function sendNotificationEmail(apiKey, { to, cc, subject, html, attachments }) {
   try {
     const payload = {
-      from: 'Corvus Leave System <noreply@thecorvusstudio.com>',
+      from: 'Corvus Studio <noreply@thecorvusstudio.com>',
       to,
       cc,
       subject,
@@ -2220,7 +2220,7 @@ async function generateAiEmailBody(c, document_type, employee, jobRole) {
   }
 
   try {
-    const prompt = `Write a formal, corporate, to-the-point email body (paragraphs) for an employee receiving a "${document_type}" from their company "The Corvus Studio".
+    const prompt = `Write a formal, corporate, to-the-point email body (paragraphs) for an employee receiving a "${document_type}" from their company "Corvus Studio".
 The employee is "${employee.full_name}" who is designated as "${jobRole}".
 The email must explain the business purpose of the attached "${document_type}" and any immediate actions required, in a direct and professional HR tone.
 
@@ -2229,7 +2229,8 @@ Strict Style Guidelines:
 2. No AI-like jargon, emojis, or exclamation marks. Keep it completely formal and human.
 3. No markdown formatting (do NOT use asterisks, backticks, or hashes, e.g., **bold**, *italic*). Use standard HTML bold tags (<strong>) if emphasizing a name or document type.
 4. Do NOT write any greeting (e.g. "Dear ...") or sign-off/signature block (e.g. "Best regards...").
-5. Return ONLY the body paragraphs formatted in clean HTML (<p> or <ul>/<li>). No outer wrapper, no conversational chatter.`;
+5. Return ONLY the body paragraphs formatted in clean HTML (<p> or <ul>/<li>). No outer wrapper, no conversational chatter.
+6. Refer to the company as "Corvus Studio" only. Do NOT use "The Corvus Studio" or "the corvus studio".`;
 
     const result = await c.env.AI.run('@cf/meta/llama-3.1-8b-instruct', {
       messages: [
@@ -2264,6 +2265,38 @@ Strict Style Guidelines:
   return null;
 }
 
+function getContactEmailForDoc(document_type) {
+  const docType = (document_type || '').toLowerCase();
+  
+  if (docType.includes('offer') || docType.includes('appointment') || docType.includes('confirmation') || docType.includes('increment') || docType.includes('promotion') || docType.includes('warning') || docType.includes('notice') || docType.includes('probation') || docType.includes('internship')) {
+    return 'careers@thecorvusstudio.com';
+  }
+  
+  if (docType.includes('relieving') || docType.includes('experience') || docType.includes('final settlement')) {
+    return 'careers@thecorvusstudio.com';
+  }
+  
+  if (docType.includes('salary') || docType.includes('slip') || docType.includes('payslip') || docType.includes('certificate')) {
+    return 'info@thecorvusstudio.com';
+  }
+  
+  if (docType.includes('objection') || docType.includes('noc') || docType.includes('verification')) {
+    return 'info@thecorvusstudio.com';
+  }
+  
+  return 'info@thecorvusstudio.com';
+}
+
+function getEmailFooterBlock(document_type) {
+  const email = getContactEmailForDoc(document_type);
+  return `
+        <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 24px 0 16px;" />
+        <p style="color: #64748b; font-size: 11px; line-height: 1.6; margin-bottom: 20px; font-style: italic;">
+          This is a system-generated email and may contain automated layout formatting or data. If you have any doubts or questions, please contact us at <a href="mailto:${email}" style="color: #0ea5e9; text-decoration: none; font-weight: 600; font-style: normal;">${email}</a>.
+        </p>
+  `;
+}
+
 function getEmailBody(document_type, employee, jobRole) {
   const containerStart = `
     <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f8fafc; padding: 24px;">
@@ -2277,15 +2310,12 @@ function getEmailBody(document_type, employee, jobRole) {
   `;
 
   const containerEnd = `
-        <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 24px 0 16px;" />
-        <p style="color: #475569; font-size: 12px; line-height: 1.6; margin-bottom: 20px;">
-          If you have any questions or require further details, please reach out to the HR Operations desk at <a href="mailto:careers@thecorvusstudio.com" style="color: #0ea5e9; text-decoration: none; font-weight: 600;">careers@thecorvusstudio.com</a>.
-        </p>
+        ${getEmailFooterBlock(document_type)}
         <p style="color: #334155; font-size: 14px; margin-top: 24px; line-height: 1.5;">
           Best Regards,<br/>
           <strong>HR Operations Team</strong><br/>
           <span style="color: #64748b; font-size: 12px;">Corvus Studio</span><br/>
-          <a href="mailto:careers@thecorvusstudio.com" style="color: #0ea5e9; text-decoration: none; font-size: 12px;">careers@thecorvusstudio.com</a>
+          <a href="mailto:${getContactEmailForDoc(document_type)}" style="color: #0ea5e9; text-decoration: none; font-size: 12px;">${getContactEmailForDoc(document_type)}</a>
         </p>
       </div>
     </div>
@@ -2298,7 +2328,7 @@ function getEmailBody(document_type, employee, jobRole) {
     case 'Appointment Letter':
       body = `
         <p style="color: #334155; font-size: 14px; line-height: 1.7; margin-bottom: 16px;">
-          Please find the official <strong>${document_type}</strong> for the position of <strong>${jobRole}</strong> at <strong>The Corvus Studio</strong> attached to this email.
+          Please find the official <strong>${document_type}</strong> for the position of <strong>${jobRole}</strong> at <strong>Corvus Studio</strong> attached to this email.
         </p>
         <p style="color: #334155; font-size: 14px; line-height: 1.7; margin-bottom: 16px;">
           Kindly review the terms and conditions carefully. To confirm your acceptance of this offer, please sign the document where indicated and return the executed copy to <a href="mailto:careers@thecorvusstudio.com" style="color: #0ea5e9; text-decoration: none; font-weight: 600;">careers@thecorvusstudio.com</a>.
@@ -2312,7 +2342,7 @@ function getEmailBody(document_type, employee, jobRole) {
     case 'Confirmation Letter':
       body = `
         <p style="color: #334155; font-size: 14px; line-height: 1.7; margin-bottom: 16px;">
-          This email confirms the successful completion of your probation period. Please find your official <strong>Confirmation Letter</strong> for the position of <strong>${jobRole}</strong> at <strong>The Corvus Studio</strong> attached.
+          This email confirms the successful completion of your probation period. Please find your official <strong>Confirmation Letter</strong> for the position of <strong>${jobRole}</strong> at <strong>Corvus Studio</strong> attached.
         </p>
         <p style="color: #334155; font-size: 14px; line-height: 1.7; margin-bottom: 16px;">
           We appreciate your dedication and contribution during your probation period and look forward to your continued association with the company.
@@ -2324,7 +2354,7 @@ function getEmailBody(document_type, employee, jobRole) {
     case 'Employment Verification Certificate':
       body = `
         <p style="color: #334155; font-size: 14px; line-height: 1.7; margin-bottom: 16px;">
-          As requested, we have issued your official <strong>${document_type}</strong> confirming your current employment status, designation as <strong>${jobRole}</strong>, and compensation details at The Corvus Studio.
+          As requested, we have issued your official <strong>${document_type}</strong> confirming your current employment status, designation as <strong>${jobRole}</strong>, and compensation details at Corvus Studio.
         </p>
         <p style="color: #334155; font-size: 14px; line-height: 1.7; margin-bottom: 16px;">
           Please find the verified document attached to this email. This certificate is provided for your reference or onward submission to the requesting authority.
@@ -2336,7 +2366,7 @@ function getEmailBody(document_type, employee, jobRole) {
     case 'Relieving Letter':
       body = `
         <p style="color: #334155; font-size: 14px; line-height: 1.7; margin-bottom: 16px;">
-          Please find attached your official <strong>${document_type}</strong> from The Corvus Studio, confirming your service tenure and formal exit parameters.
+          Please find attached your official <strong>${document_type}</strong> from Corvus Studio, confirming your service tenure and formal exit parameters.
         </p>
         <p style="color: #334155; font-size: 14px; line-height: 1.7; margin-bottom: 16px;">
           We acknowledge your contributions during your tenure and wish you success in your future professional endeavors.
@@ -2348,7 +2378,7 @@ function getEmailBody(document_type, employee, jobRole) {
     case 'Promotion Letter':
       body = `
         <p style="color: #334155; font-size: 14px; line-height: 1.7; margin-bottom: 16px;">
-          Please find attached your official <strong>${document_type}</strong> in recognition of your performance and growth at The Corvus Studio.
+          Please find attached your official <strong>${document_type}</strong> in recognition of your performance and growth at Corvus Studio.
         </p>
         <p style="color: #334155; font-size: 14px; line-height: 1.7; margin-bottom: 16px;">
           This letter details your revised compensation structure and/or designation as <strong>${jobRole}</strong>, effective from the date specified in the document.
@@ -2370,7 +2400,7 @@ function getEmailBody(document_type, employee, jobRole) {
     case 'Full & Final Settlement Letter':
       body = `
         <p style="color: #334155; font-size: 14px; line-height: 1.7; margin-bottom: 16px;">
-          Please find attached your official <strong>Full & Final Settlement Letter</strong> from The Corvus Studio.
+          Please find attached your official <strong>Full & Final Settlement Letter</strong> from Corvus Studio.
         </p>
         <p style="color: #334155; font-size: 14px; line-height: 1.7; margin-bottom: 16px;">
           This document summarizes the close-out details of your account, including the calculation of outstanding dues, leave encashment adjustments, and final disbursement details.
@@ -2381,7 +2411,7 @@ function getEmailBody(document_type, employee, jobRole) {
     case 'No Objection Certificate (NOC)':
       body = `
         <p style="color: #334155; font-size: 14px; line-height: 1.7; margin-bottom: 16px;">
-          As requested, we have issued your official <strong>No Objection Certificate (NOC)</strong> from The Corvus Studio.
+          As requested, we have issued your official <strong>No Objection Certificate (NOC)</strong> from Corvus Studio.
         </p>
         <p style="color: #334155; font-size: 14px; line-height: 1.7; margin-bottom: 16px;">
           Please find the document attached to this email, confirming that the company has no objection to the requested activity as per our records.
@@ -2392,7 +2422,7 @@ function getEmailBody(document_type, employee, jobRole) {
     case 'Appreciation Letter':
       body = `
         <p style="color: #334155; font-size: 14px; line-height: 1.7; margin-bottom: 16px;">
-          Please find attached the official <strong>Letter of Appreciation</strong> issued in recognition of your recent contributions at The Corvus Studio.
+          Please find attached the official <strong>Letter of Appreciation</strong> issued in recognition of your recent contributions at Corvus Studio.
         </p>
         <p style="color: #334155; font-size: 14px; line-height: 1.7; margin-bottom: 16px;">
           The management appreciates your commitment and effort towards the project objectives.
@@ -2407,7 +2437,7 @@ function getEmailBody(document_type, employee, jobRole) {
           Formal Disciplinary Notice
         </p>
         <p style="color: #334155; font-size: 14px; line-height: 1.7; margin-bottom: 16px;">
-          Please find attached your official <strong>${document_type}</strong> from The Corvus Studio HR Operations.
+          Please find attached your official <strong>${document_type}</strong> from Corvus Studio HR Operations.
         </p>
         <p style="color: #334155; font-size: 14px; line-height: 1.7; margin-bottom: 16px;">
           You are instructed to review this document. If a response, explanation, or corrective action plan is requested, please submit it as detailed within the document within the specified timeframe.
@@ -2418,7 +2448,7 @@ function getEmailBody(document_type, employee, jobRole) {
     case 'Probation Extension Letter':
       body = `
         <p style="color: #334155; font-size: 14px; line-height: 1.7; margin-bottom: 16px;">
-          Please find attached your official <strong>Probation Extension Letter</strong> from The Corvus Studio.
+          Please find attached your official <strong>Probation Extension Letter</strong> from Corvus Studio.
         </p>
         <p style="color: #334155; font-size: 14px; line-height: 1.7; margin-bottom: 16px;">
           This letter details the extension of your evaluation period to provide further opportunity to align your performance with the company's expectations.
@@ -2429,7 +2459,7 @@ function getEmailBody(document_type, employee, jobRole) {
     default:
       body = `
         <p style="color: #334155; font-size: 14px; line-height: 1.7; margin-bottom: 16px;">
-          Please find attached your official <strong>${document_type}</strong> from The Corvus Studio.
+          Please find attached your official <strong>${document_type}</strong> from Corvus Studio.
         </p>
         <p style="color: #334155; font-size: 14px; line-height: 1.7; margin-bottom: 16px;">
           Kindly review the document carefully and keep a copy for your reference. If an acknowledgement or signed copy is required by HR, please reply to this email with the completed copy.
@@ -2487,55 +2517,55 @@ app.on('POST', ['/api/v1/admin/offer-letters/send-email', '/admin/offer-letters/
   let subject = '';
   switch (document_type) {
     case 'Offer Letter':
-      subject = `Offer of Employment – The Corvus Studio`;
+      subject = `Offer of Employment – Corvus Studio`;
       break;
     case 'Appointment Letter':
-      subject = `Appointment Letter – The Corvus Studio`;
+      subject = `Appointment Letter – Corvus Studio`;
       break;
     case 'Confirmation Letter':
-      subject = `Employment Confirmation Letter – The Corvus Studio`;
+      subject = `Employment Confirmation Letter – Corvus Studio`;
       break;
     case 'Experience Letter':
-      subject = `Work Experience Certificate – The Corvus Studio`;
+      subject = `Work Experience Certificate – Corvus Studio`;
       break;
     case 'Relieving Letter':
-      subject = `Relieving Letter – The Corvus Studio`;
+      subject = `Relieving Letter – Corvus Studio`;
       break;
     case 'Salary Certificate':
-      subject = `Salary Certificate – The Corvus Studio`;
+      subject = `Salary Certificate – Corvus Studio`;
       break;
     case 'Employment Verification Certificate':
-      subject = `Employment Verification Certificate – The Corvus Studio`;
+      subject = `Employment Verification Certificate – Corvus Studio`;
       break;
     case 'Increment Letter':
-      subject = `Salary Increment Letter – The Corvus Studio`;
+      subject = `Salary Increment Letter – Corvus Studio`;
       break;
     case 'Promotion Letter':
-      subject = `Promotion Letter – The Corvus Studio`;
+      subject = `Promotion Letter – Corvus Studio`;
       break;
     case 'Resignation Acceptance Letter':
-      subject = `Resignation Acceptance – The Corvus Studio`;
+      subject = `Resignation Acceptance – Corvus Studio`;
       break;
     case 'Full & Final Settlement Letter':
-      subject = `Full & Final Settlement – The Corvus Studio`;
+      subject = `Full & Final Settlement – Corvus Studio`;
       break;
     case 'No Objection Certificate (NOC)':
-      subject = `No Objection Certificate (NOC) – The Corvus Studio`;
+      subject = `No Objection Certificate (NOC) – Corvus Studio`;
       break;
     case 'Appreciation Letter':
-      subject = `Letter of Appreciation – The Corvus Studio`;
+      subject = `Letter of Appreciation – Corvus Studio`;
       break;
     case 'Warning Letter':
-      subject = `Warning Letter – Disciplinary Notice – The Corvus Studio`;
+      subject = `Warning Letter – Disciplinary Notice – Corvus Studio`;
       break;
     case 'Show Cause Notice':
-      subject = `Show Cause Notice – Disciplinary Action – The Corvus Studio`;
+      subject = `Show Cause Notice – Disciplinary Action – Corvus Studio`;
       break;
     case 'Probation Extension Letter':
-      subject = `Probation Extension Letter – The Corvus Studio`;
+      subject = `Probation Extension Letter – Corvus Studio`;
       break;
     default:
-      subject = `${document_type} – The Corvus Studio`;
+      subject = `${document_type} – Corvus Studio`;
   }
 
   // Dynamic Email Body Mapping
@@ -2558,15 +2588,12 @@ app.on('POST', ['/api/v1/admin/offer-letters/send-email', '/admin/offer-letters/
           ${aiBody}
         </div>
         
-        <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 24px 0 16px;" />
-        <p style="color: #475569; font-size: 12px; line-height: 1.6; margin-bottom: 20px;">
-          If you have any questions or require further details, please reach out to the HR Operations desk at <a href="mailto:careers@thecorvusstudio.com" style="color: #0ea5e9; text-decoration: none; font-weight: 600;">careers@thecorvusstudio.com</a>.
-        </p>
+        ${getEmailFooterBlock(document_type)}
         <p style="color: #334155; font-size: 14px; margin-top: 24px; line-height: 1.5;">
           Best Regards,<br/>
           <strong>HR Operations Team</strong><br/>
           <span style="color: #64748b; font-size: 12px;">Corvus Studio</span><br/>
-          <a href="mailto:careers@thecorvusstudio.com" style="color: #0ea5e9; text-decoration: none; font-size: 12px;">careers@thecorvusstudio.com</a>
+          <a href="mailto:${getContactEmailForDoc(document_type)}" style="color: #0ea5e9; text-decoration: none; font-size: 12px;">${getContactEmailForDoc(document_type)}</a>
         </p>
       </div>
     </div>
