@@ -756,11 +756,11 @@ function salaryBreakdownPage(p) {
   const deductions = employeePF;
   const net        = gross - deductions;
 
-  // PF Maturity calculation (5 years @ 8.25% p.a. compounded monthly)
+  // PF Maturity calculation (3 years @ 8.25% p.a. compounded monthly)
   const monthlyPF  = employeePF + employerPF;      // total monthly PF corpus contribution
   const annualPF   = monthlyPF * 12;
   const pfRate     = 8.25 / 100 / 12;              // monthly rate
-  const pfMonths   = 60;                            // 5 years
+  const pfMonths   = 36;                            // 3 years (36 months)
   const pfMaturity = Math.round(monthlyPF * (((Math.pow(1 + pfRate, pfMonths) - 1) / pfRate) * (1 + pfRate)));
 
   const fmt = n => Math.round(n).toLocaleString('en-IN');
@@ -777,7 +777,7 @@ function salaryBreakdownPage(p) {
 
     <table class="breakdown-table">
       <thead>
-        <tr><th colspan="2">Earnings</th><th colspan="2">Deductions</th></tr>
+        <tr><th colspan="2">Earnings</th><th colspan="2">Deductions (From Salary Share)</th></tr>
         <tr>
           <td class="label">Component</td><td class="amount">Monthly (INR)</td>
           <td class="label">Component</td><td class="amount">Monthly (INR)</td>
@@ -790,7 +790,7 @@ function salaryBreakdownPage(p) {
         </tr>
         <tr>
           <td>House Rent Allowance (HRA)</td><td class="amount">&#8377;&nbsp;${fmt(hra)}</td>
-          <td>Employer PF (12% of Basic)</td><td class="amount">&#8377;&nbsp;${fmt(employerPF)}</td>
+          <td></td><td></td>
         </tr>
         <tr>
           <td>Special Allowance</td><td class="amount">&#8377;&nbsp;${fmt(special)}</td>
@@ -817,8 +817,29 @@ function salaryBreakdownPage(p) {
       </tfoot>
     </table>
 
+    <!-- Employer Contributions Section -->
+    <div class="pf-section" style="margin-top:10px">
+      <div class="pf-title">EMPLOYER CONTRIBUTIONS (INCLUDED IN CTC)</div>
+      <table class="breakdown-table" style="margin-top:6px">
+        <thead>
+          <tr>
+            <th>Contribution Component</th>
+            <th class="amount" style="width:25%">Monthly (INR)</th>
+            <th>Type</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Employer PF (12% of Basic)</td>
+            <td class="amount">&#8377;&nbsp;${fmt(employerPF)}</td>
+            <td>Statutory Share (Not Deducted from Take-Home Salary)</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
     <!-- PF Maturity Section -->
-    <div class="pf-section">
+    <div class="pf-section" style="margin-top:10px">
       <div class="pf-title">PROVIDENT FUND SUMMARY</div>
       <table class="breakdown-table" style="margin-top:6px">
         <thead>
@@ -835,15 +856,15 @@ function salaryBreakdownPage(p) {
           </tr>
           <tr class="net-row highlight">
             <td>Total Monthly PF</td><td class="amount">&#8377;&nbsp;${fmt(monthlyPF)}</td>
-            <td><strong>Estimated PF Maturity (5 yrs @ 8.25%)</strong></td><td class="amount net-amount"><strong>&#8377;&nbsp;${fmt(pfMaturity)}</strong></td>
+            <td><strong>Estimated PF Value After 3 Years (@ Current EPF Interest Rate)</strong></td><td class="amount net-amount"><strong>&#8377;&nbsp;${fmt(pfMaturity)}</strong></td>
           </tr>
         </tbody>
       </table>
     </div>
 
-    <div class="breakdown-note">
-      <p><strong>Note:</strong> The above salary structure is for reference. Actual take-home may vary subject to applicable statutory deductions (PF, PT, TDS). The <strong>Net Monthly Salary</strong> of <strong>INR ${fmt(net)}</strong> is the amount credited to your bank account each month.</p>
-      <p>PF maturity is an estimate based on 5 years of continuous contribution at the current EPF interest rate of <strong>8.25% p.a.</strong> Actual maturity may vary based on withdrawals, rate revisions, and tenure.</p>
+    <div class="breakdown-note" style="font-size:8.2pt; line-height:1.35; margin-top:8px">
+      <p><strong>Compliance Note (EPF Act, 1952):</strong> In accordance with the Employees' Provident Funds and Miscellaneous Provisions Act, 1952, employees are entitled to EPF benefits. Under standard Indian payroll structuring, the employer's matching contribution of 12% of Basic is included within the gross Cost to Company (CTC). Deductions from the employee's gross monthly salary are limited strictly to the employee's own statutory share (12% of Basic) and any applicable tax/professional tax, ensuring full alignment with the Payment of Wages Act, 1936.</p>
+      <p style="margin-top:4px"><strong>Disclaimer:</strong> The PF projection is an estimate based on the current EPF interest rate and assumes uninterrupted monthly contributions for 3 years. Actual accumulated PF will depend on the EPFO-declared interest rates, the timing of monthly contributions, salary revisions, and statutory rules. If the employee resigns or leaves the organization before completing 3 years, the accumulated PF balance, including eligible employer contributions and accrued interest as per EPFO regulations, can be transferred to a new employer or withdrawn subject to the applicable EPFO rules in force at that time.</p>
     </div>
   </div>
   ${FOOTER}

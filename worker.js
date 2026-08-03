@@ -1135,7 +1135,7 @@ app.on('PATCH', ['/api/v1/user/profile', '/user/profile'], auth, async (c) => {
 
 app.on('GET', ['/api/v1/user/list', '/user/list'], auth, async (c) => {
   const usersResult = await c.env.DB.prepare(
-    `SELECT id, full_name, work_email, role, status, designation, department, employee_type, joining_date, dob, contact_number,
+    `SELECT id, full_name, work_email, personal_email, role, status, designation, department, employee_type, joining_date, dob, contact_number,
             can_approve_leaves, can_add_employee, can_remove_employee
      FROM users WHERE status = 'active' ORDER BY full_name ASC`
   ).all();
@@ -1164,6 +1164,7 @@ app.on('GET', ['/api/v1/user/list', '/user/list'], auth, async (c) => {
       id: u.id,
       fullName: u.full_name,
       workEmail: u.work_email,
+      personalEmail: u.personal_email,
       role: u.role,
       status: u.status,
       designation: u.designation,
