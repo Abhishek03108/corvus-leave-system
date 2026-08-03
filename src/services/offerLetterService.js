@@ -102,13 +102,37 @@ export function buildPlaceholders(emp, docId, opts = {}) {
     EMP_TYPE:  opts.employmentType || detectEmploymentType(emp.employee_type),
     MANAGER:   opts.reportingManager || 'the Reporting Manager',
     RESPONSIBILITIES: getResponsibilitiesText(opts.jobRole || emp.designation || 'Team Member'),
-    // Optional doc-specific fields
-    CONFIRM_DATE: opts.confirmationDate ? new Date(opts.confirmationDate).toLocaleDateString('en-GB',{day:'2-digit',month:'long',year:'numeric'}) : endDate,
-    PREV_SALARY:  opts.previousSalary  || null,
-    EFFECT_DATE:  opts.effectiveDate   ? new Date(opts.effectiveDate).toLocaleDateString('en-GB',{day:'2-digit',month:'long',year:'numeric'}) : joining,
-    NEW_ROLE:     opts.newRole         || null,
-    RESIGN_DATE:  opts.resignationDate ? new Date(opts.resignationDate).toLocaleDateString('en-GB',{day:'2-digit',month:'long',year:'numeric'}) : null,
-    NOC_PURPOSE:  opts.nocPurpose      || 'professional purposes',
+    // Optional doc-specific fields (Phase 2)
+    CONFIRM_DATE:        opts.confirmationDate    ? new Date(opts.confirmationDate).toLocaleDateString('en-GB',{day:'2-digit',month:'long',year:'numeric'}) : endDate,
+    PREV_SALARY:         opts.previousSalary      || null,
+    EFFECT_DATE:         opts.effectiveDate       ? new Date(opts.effectiveDate).toLocaleDateString('en-GB',{day:'2-digit',month:'long',year:'numeric'}) : joining,
+    NEW_ROLE:            opts.newRole             || null,
+    RESIGN_DATE:         opts.resignationDate     ? new Date(opts.resignationDate).toLocaleDateString('en-GB',{day:'2-digit',month:'long',year:'numeric'}) : null,
+    LAST_WORKING_DATE:   opts.lastWorkingDate     ? new Date(opts.lastWorkingDate).toLocaleDateString('en-GB',{day:'2-digit',month:'long',year:'numeric'}) : endDate,
+    NOC_PURPOSE:         opts.nocPurpose          || 'professional purposes',
+    NOC_VALID_UNTIL:     opts.nocValidUntil       ? new Date(opts.nocValidUntil).toLocaleDateString('en-GB',{day:'2-digit',month:'long',year:'numeric'}) : null,
+    INCIDENT_DATE:       opts.incidentDate        ? new Date(opts.incidentDate).toLocaleDateString('en-GB',{day:'2-digit',month:'long',year:'numeric'}) : null,
+    RESPONSE_DEADLINE:   opts.responseDeadline    ? new Date(opts.responseDeadline).toLocaleDateString('en-GB',{day:'2-digit',month:'long',year:'numeric'}) : null,
+    ORIG_PROBATION_END:  opts.originalProbationEnd ? new Date(opts.originalProbationEnd).toLocaleDateString('en-GB',{day:'2-digit',month:'long',year:'numeric'}) : null,
+    EXT_DURATION:        opts.extensionDuration   ? `${opts.extensionDuration} ${opts.extensionUnit || 'Months'}` : durationLabel,
+    EXT_REASON:          opts.extensionReason     || null,
+    WARN_DESC:           opts.warningDescription  || null,
+    APPRECIATION_PERIOD: opts.appreciationPeriod  || null,
+    SALARY_PERIOD:       opts.salaryPeriod        || null,
+    ANNUAL_SALARY:       opts.annualSalary        || (opts.salary ? String(Number(opts.salary) * 12) : null),
+    MONTHLY_CTC:         opts.monthlyCTC          || opts.salary || null,
+    ANNUAL_CTC:          opts.annualCTC           || null,
+    BASIC_SALARY:        opts.basicSalary         || null,
+    HRA:                 opts.hra                 || null,
+    SPECIAL_ALLOWANCE:   opts.specialAllowance    || null,
+    EMPLOYER_PF:         opts.employerPF          || null,
+    EMPLOYEE_PF:         opts.employeePF          || null,
+    GROSS_SALARY:        opts.grossSalary         || null,
+    TOTAL_DEDUCTIONS:    opts.totalDeductions     || null,
+    NET_SALARY:          opts.netSalary           || null,
+    PAID_UNPAID:         opts.paidUnpaid          || 'Paid',
+    MOBILE:              opts.mobileNumber        || null,
+    OFFICE_LOCATION:     opts.officeLocation      || null,
   };
 }
 
@@ -892,7 +916,7 @@ function confirmationLetterContent(p) {
 function experienceLetterContent(p) {
   return `
 <p class="salutation">To Whom It May Concern,</p>
-<p>This is to certify that <strong>${p.NAME}</strong> (Employee ID: <strong>${p.DOC_ID}</strong>) was employed with <span class="co">Corvus Studio</span> in the capacity of <strong>${p.ROLE}</strong> in the <strong>${p.DEPT}</strong> team from <strong>${p.JOINING}</strong> to <strong>${p.END_DATE}</strong>.</p>
+<p>This is to certify that <strong>${p.NAME}</strong> (Employee ID: <strong>${p.DOC_ID}</strong>) was employed with <span class="co">Corvus Studio</span> in the capacity of <strong>${p.ROLE}</strong> in the <strong>${p.DEPT}</strong> team from <strong>${p.JOINING}</strong> to <strong>${p.LAST_WORKING_DATE || p.END_DATE}</strong>.</p>
 <p>During the tenure of their association with us, <strong>${p.NAME}</strong> demonstrated professional competence, technical excellence, and consistent performance, fulfilling the responsibilities assigned to the role diligently and professionally.</p>
 <p>We wish <strong>${p.NAME}</strong> the very best in all future endeavours.</p>
 <p>This letter is issued at the request of the individual for whatever purpose it may serve.</p>`;
@@ -901,7 +925,7 @@ function experienceLetterContent(p) {
 function relievingLetterContent(p) {
   return `
 <p class="salutation">To Whom It May Concern,</p>
-<p>This is to certify that <strong>${p.NAME}</strong> (Employee ID: <strong>${p.DOC_ID}</strong>), who was employed with <span class="co">Corvus Studio</span> as <strong>${p.ROLE}</strong> in the <strong>${p.DEPT}</strong> team, has been duly relieved from their duties with effect from the close of business on <strong>${p.END_DATE}</strong>.</p>
+<p>This is to certify that <strong>${p.NAME}</strong> (Employee ID: <strong>${p.DOC_ID}</strong>), who was employed with <span class="co">Corvus Studio</span> as <strong>${p.ROLE}</strong> in the <strong>${p.DEPT}</strong> team, has been duly relieved from their duties with effect from the close of business on <strong>${p.LAST_WORKING_DATE || p.END_DATE}</strong>.${p.RESIGN_DATE ? ' Resignation was accepted effective ' + p.RESIGN_DATE + '.' : ''}</p>
 <p>A full and final settlement of dues has been completed per the Company's standard process. The employee has completed the handover of responsibilities, access credentials, and company data as required.</p>
 <p><strong>${p.NAME}</strong> is no longer associated with <span class="co">Corvus Studio</span> as of the above date and is free to pursue other opportunities.</p>
 <p>We thank <strong>${p.NAME}</strong> for their contributions and wish them well in their future career.</p>
@@ -919,7 +943,9 @@ function salaryCertificateContent(p) {
   <tr><td>Department</td><td>${p.DEPT}</td></tr>
   <tr><td>Date of Joining</td><td>${p.JOINING}</td></tr>
   <tr><td>Employment Status</td><td>Permanent / Confirmed</td></tr>
-  <tr><td>Gross Monthly Salary</td><td>${p.STIPEND !== 'unpaid' ? 'INR ' + p.STIPEND : 'As agreed'}</td></tr>
+  <tr><td>Gross Monthly Salary</td><td>${p.STIPEND !== 'unpaid' ? 'INR ' + Number(p.STIPEND).toLocaleString('en-IN') : 'As agreed'}</td></tr>
+  ${p.ANNUAL_SALARY ? '<tr><td>Annual CTC</td><td>INR ' + Number(p.ANNUAL_SALARY).toLocaleString('en-IN') + '</td></tr>' : ''}
+  ${p.SALARY_PERIOD ? '<tr><td>Salary Period</td><td>' + p.SALARY_PERIOD + '</td></tr>' : ''}
 </table>
 <p>This certificate is issued at the request of the employee for loan / visa / bank / personal purposes only and should not be construed as a guarantee of continued employment.</p>`;
 }
@@ -942,8 +968,8 @@ function employmentVerificationCertificateContent(p) {
 }
 
 function incrementLetterContent(p) {
-  const prevSalary = p.PREV_SALARY || 'previous CTC';
-  const newSalary  = p.STIPEND !== 'unpaid' ? 'INR ' + p.STIPEND : 'revised CTC';
+  const prevSalary = p.PREV_SALARY ? 'INR ' + Number(p.PREV_SALARY).toLocaleString('en-IN') : 'Previous CTC';
+  const newSalary  = p.STIPEND !== 'unpaid' ? 'INR ' + Number(p.STIPEND).toLocaleString('en-IN') : 'Revised CTC';
   const effectDate = p.EFFECT_DATE || p.JOINING;
   return `
 <p class="salutation">Dear <strong>${p.NAME}</strong>,</p>
@@ -963,13 +989,14 @@ function incrementLetterContent(p) {
 function promotionLetterContent(p) {
   const newRole    = p.NEW_ROLE || p.ROLE;
   const effectDate = p.EFFECT_DATE || p.JOINING;
+  const prevRole   = p.ROLE;
   return `
 <p class="salutation">Dear <strong>${p.NAME}</strong>,</p>
 <p>We are delighted to inform you that based on your performance, contributions, and demonstrated capabilities, you have been promoted to the position of <strong>${newRole}</strong> in the <strong>${p.DEPT}</strong> team, effective <strong>${effectDate}</strong>.</p>
 <table class="doc-table">
   <tr><td>Employee Name</td><td>${p.NAME}</td></tr>
   <tr><td>Employee ID</td><td>${p.DOC_ID}</td></tr>
-  <tr><td>Previous Designation</td><td>${p.ROLE}</td></tr>
+  <tr><td>Previous Designation</td><td>${prevRole}</td></tr>
   <tr><td>New Designation</td><td>${newRole}</td></tr>
   <tr><td>Department</td><td>${p.DEPT}</td></tr>
   <tr><td>Effective Date</td><td>${effectDate}</td></tr>
@@ -982,7 +1009,7 @@ function promotionLetterContent(p) {
 
 function resignationAcceptanceLetterContent(p) {
   const resignDate  = p.RESIGN_DATE || p.DATE;
-  const lastWorkDay = p.END_DATE;
+  const lastWorkDay = p.LAST_WORKING_DATE || p.END_DATE;
   return `
 <p class="salutation">Dear <strong>${p.NAME}</strong>,</p>
 <p>We acknowledge receipt of your resignation letter dated <strong>${resignDate}</strong>. After due consideration, we hereby accept your resignation from the position of <strong>${p.ROLE}</strong> in the <strong>${p.DEPT}</strong> team with Corvus Studio.</p>
@@ -1000,7 +1027,7 @@ function resignationAcceptanceLetterContent(p) {
 }
 
 function fullAndFinalSettlementLetterContent(p) {
-  const lastWorkDay = p.END_DATE;
+  const lastWorkDay = p.LAST_WORKING_DATE || p.END_DATE;
   return `
 <p class="salutation">Dear <strong>${p.NAME}</strong>,</p>
 <p>With reference to your separation from <span class="co">Corvus Studio</span> effective <strong>${lastWorkDay}</strong>, we are pleased to inform you that your full and final settlement has been computed as follows:</p>
@@ -1009,7 +1036,7 @@ function fullAndFinalSettlementLetterContent(p) {
   <tr><td>Employee ID</td><td>${p.DOC_ID}</td></tr>
   <tr><td>Designation</td><td>${p.ROLE}</td></tr>
   <tr><td>Last Working Date</td><td>${lastWorkDay}</td></tr>
-  <tr><td>Net Payable Amount</td><td>${p.STIPEND !== 'unpaid' ? 'INR ' + p.STIPEND : 'As computed'}</td></tr>
+  <tr><td>Net Payable Amount</td><td>${p.STIPEND && p.STIPEND !== 'unpaid' ? 'INR ' + Number(p.STIPEND).toLocaleString('en-IN') : 'As computed'}</td></tr>
   <tr><td>Mode of Payment</td><td>Bank Transfer</td></tr>
 </table>
 <p>The above settlement is in full and final satisfaction of all dues, claims, and entitlements arising from your employment with <span class="co">Corvus Studio</span>. By accepting this settlement, you confirm that you have no outstanding claims against Corvus Studio.</p>
@@ -1028,6 +1055,7 @@ function noObjectionCertificateContent(p) {
   <tr><td>Department</td><td>${p.DEPT}</td></tr>
   <tr><td>Date of Joining</td><td>${p.JOINING}</td></tr>
   <tr><td>NOC Purpose</td><td>${nocPurpose}</td></tr>
+  ${p.NOC_VALID_UNTIL ? '<tr><td>Valid Until</td><td>' + p.NOC_VALID_UNTIL + '</td></tr>' : ''}
 </table>
 <p><span class="co">Corvus Studio</span> has no objection to <strong>${p.NAME}</strong> pursuing the above purpose, provided that such activity does not conflict with the employee's duties, obligations, and confidentiality commitments to Corvus Studio as set out in the Employee NDA and Employment Agreement.</p>
 <p>This certificate is issued in good faith and is valid only for the stated purpose.</p>`;
@@ -1050,7 +1078,9 @@ function warningLetterContent(p) {
   <tr><td>Employee ID</td><td>${p.DOC_ID}</td></tr>
   <tr><td>Designation</td><td>${p.ROLE}</td></tr>
   <tr><td>Department</td><td>${p.DEPT}</td></tr>
+  ${p.INCIDENT_DATE ? '<tr><td>Date of Incident</td><td>' + p.INCIDENT_DATE + '</td></tr>' : ''}
 </table>
+${p.WARN_DESC ? '<p><strong>Particulars of the Issue</strong></p><p>' + p.WARN_DESC + '</p>' : ''}
 <p><strong>Company's Position</strong></p>
 <p>The observed conduct and/or performance is in violation of the Corvus Studio Employee Manual and the standards expected of all employees. This behaviour is unacceptable and cannot be tolerated.</p>
 <p><strong>Action Required</strong></p>
@@ -1068,7 +1098,8 @@ function showCauseNoticeContent(p) {
   <tr><td>Designation</td><td>${p.ROLE}</td></tr>
   <tr><td>Department</td><td>${p.DEPT}</td></tr>
   <tr><td>Notice Date</td><td>${p.DATE}</td></tr>
-  <tr><td>Response Deadline</td><td>Within 5–7 working days from receipt of this notice</td></tr>
+  ${p.INCIDENT_DATE ? '<tr><td>Date of Incident</td><td>' + p.INCIDENT_DATE + '</td></tr>' : ''}
+  <tr><td>Response Deadline</td><td>${p.RESPONSE_DEADLINE || 'Within 5–7 working days from receipt of this notice'}</td></tr>
 </table>
 <p><strong>Your Response is Required</strong></p>
 <p>You are hereby called upon to submit a written explanation addressing the matters raised and explaining why disciplinary action should not be initiated against you. Your response must be addressed to the Founder &amp; CEO, Corvus Studio, and submitted within the stated deadline.</p>
@@ -1087,10 +1118,12 @@ function probationExtensionLetterContent(p) {
   <tr><td>Designation</td><td>${p.ROLE}</td></tr>
   <tr><td>Department</td><td>${p.DEPT}</td></tr>
   <tr><td>Date of Joining</td><td>${p.JOINING}</td></tr>
-  <tr><td>Extended Probation Period</td><td>${p.DURATION}</td></tr>
+  ${p.ORIG_PROBATION_END ? '<tr><td>Original Probation End Date</td><td>' + p.ORIG_PROBATION_END + '</td></tr>' : ''}
+  <tr><td>Extended Probation Period</td><td>${p.EXT_DURATION || p.DURATION}</td></tr>
   <tr><td>Revised End Date</td><td>${p.END_DATE}</td></tr>
 </table>
 <p><strong>Performance Improvement Expectations</strong></p>
+${p.EXT_REASON ? '<p><strong>Reason for Extension</strong></p><p>' + p.EXT_REASON + '</p>' : ''}
 <p>During the extended probation period, you are expected to demonstrate improvement in consistency, technical output, and integration into the team workflow. Your performance will be reviewed again at the end of the extended probation period. A satisfactory review will result in confirmation of your employment. Continued unsatisfactory performance may result in termination of employment.</p>
 <p>All other terms and conditions of your Appointment Letter and the Corvus Studio Employee Manual continue to apply during the extended period.</p>
 <p>Please sign and return a copy of this letter as your acknowledgement.</p>`;
