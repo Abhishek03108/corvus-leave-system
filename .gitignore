@@ -5,3 +5,5 @@ node_modules
 database.sqlite
 mock_emails.log
 *.log
+scratch/
+scratch_modules/
