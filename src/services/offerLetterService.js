@@ -518,18 +518,30 @@ html::-webkit-scrollbar, body::-webkit-scrollbar, *::-webkit-scrollbar {
   margin-bottom: 8px;
 }
 
-/* â”€â”€ Body â”€â”€ */
+/* ─── Body ─── */
 .body p {
   font-family: 'Times New Roman', serif;
   font-size: 10.5pt;
-  line-height: 1.45;
+  line-height: 1.5;
   text-align: justify;
-  margin-bottom: 4px;
+  margin-bottom: 8px;
   color: #1a1a1a;
 }
 .body p.salutation {
   text-align: left;
-  margin-bottom: 4px;
+  margin-bottom: 8px;
+}
+.body ol, .body ul {
+  padding-left: 20px;
+  margin-bottom: 8px;
+}
+.body li {
+  font-family: 'Times New Roman', serif;
+  font-size: 10.5pt;
+  line-height: 1.5;
+  margin-bottom: 6px;
+  text-align: justify;
+  color: #1a1a1a;
 }
 .co { font-weight: bold; } /* Corvus Studio */
 

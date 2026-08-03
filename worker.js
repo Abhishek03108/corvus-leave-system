@@ -1859,7 +1859,13 @@ app.on('PATCH', ['/api/v1/admin/employee/:id', '/admin/employee/:id'], auth, req
     `INSERT INTO audit_logs (action, performed_by, target_user_id, details, created_at) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)`
   ).bind('EMPLOYEE_UPDATED', numericUserId, numericId, `Updated employee #${numericId}`).run();
 
-  return c.json({ status: 'success', message: 'Employee updated successfully.' });
+  const updatedEmployee = await c.env.DB.prepare(
+    `SELECT id, full_name as fullName, work_email as workEmail, role, designation, department, employee_type as employeeType, joining_date as joiningDate, dob, contact_number as contactNumber, personal_email as personalEmail, status,
+            can_approve_leaves as canApproveLeaves, can_manage_documents as canManageDocuments, can_manage_roles as canManageRoles
+     FROM users WHERE id = ? LIMIT 1`
+  ).bind(numericId).first();
+
+  return c.json({ status: 'success', message: 'Employee updated successfully.', data: updatedEmployee });
 });
 
 
@@ -2262,7 +2268,10 @@ function getEmailBody(document_type, employee, jobRole) {
   const containerStart = `
     <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f8fafc; padding: 24px;">
       <div style="background-color: #ffffff; border-radius: 12px; padding: 32px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
-        <h2 style="color: #0f172a; margin-top: 0; font-size: 18px; letter-spacing: 0.5px; font-weight: 800;">THE CORVUS STUDIO</h2>
+        <div style="display: flex; align-items: center; gap: 10px; margin-top: 0; margin-bottom: 16px;">
+          <img src="https://leave.thecorvusstudio.com/raven.png" alt="Corvus Studio Logo" style="height: 32px; width: auto; object-fit: contain; vertical-align: middle; margin-right: 8px;" />
+          <span style="color: #0f172a; font-size: 18px; font-weight: 800; letter-spacing: 0.5px; vertical-align: middle;">Corvus Studio</span>
+        </div>
         <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 16px 0 24px;" />
         <p style="color: #1e293b; font-size: 14px; margin-bottom: 16px; font-weight: 600;">Dear ${employee.full_name},</p>
   `;
@@ -2275,7 +2284,7 @@ function getEmailBody(document_type, employee, jobRole) {
         <p style="color: #334155; font-size: 14px; margin-top: 24px; line-height: 1.5;">
           Best Regards,<br/>
           <strong>HR Operations Team</strong><br/>
-          <span style="color: #64748b; font-size: 12px;">The Corvus Studio</span><br/>
+          <span style="color: #64748b; font-size: 12px;">Corvus Studio</span><br/>
           <a href="mailto:careers@thecorvusstudio.com" style="color: #0ea5e9; text-decoration: none; font-size: 12px;">careers@thecorvusstudio.com</a>
         </p>
       </div>
@@ -2538,26 +2547,29 @@ app.on('POST', ['/api/v1/admin/offer-letters/send-email', '/admin/offer-letters/
     emailHtml = `
       <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f8fafc; padding: 24px;">
         <div style="background-color: #ffffff; border-radius: 12px; padding: 32px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
-          <h2 style="color: #0f172a; margin-top: 0; font-size: 18px; letter-spacing: 0.5px; font-weight: 800;">THE CORVUS STUDIO</h2>
-          <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 16px 0 24px;" />
-          <p style="color: #1e293b; font-size: 14px; margin-bottom: 16px; font-weight: 600;">Dear ${employee.full_name},</p>
-          
-          <div style="color: #334155; font-size: 14px; line-height: 1.7; margin-bottom: 16px;">
-            ${aiBody}
-          </div>
-          
-          <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 24px 0 16px;" />
-          <p style="color: #475569; font-size: 12px; line-height: 1.6; margin-bottom: 20px;">
-            If you have any questions or require further details, please reach out to the HR Operations desk at <a href="mailto:careers@thecorvusstudio.com" style="color: #0ea5e9; text-decoration: none; font-weight: 600;">careers@thecorvusstudio.com</a>.
-          </p>
-          <p style="color: #334155; font-size: 14px; margin-top: 24px; line-height: 1.5;">
-            Best Regards,<br/>
-            <strong>HR Operations Team</strong><br/>
-            <span style="color: #64748b; font-size: 12px;">The Corvus Studio</span><br/>
-            <a href="mailto:careers@thecorvusstudio.com" style="color: #0ea5e9; text-decoration: none; font-size: 12px;">careers@thecorvusstudio.com</a>
-          </p>
+        <div style="display: flex; align-items: center; gap: 10px; margin-top: 0; margin-bottom: 16px;">
+          <img src="https://leave.thecorvusstudio.com/raven.png" alt="Corvus Studio Logo" style="height: 32px; width: auto; object-fit: contain; vertical-align: middle; margin-right: 8px;" />
+          <span style="color: #0f172a; font-size: 18px; font-weight: 800; letter-spacing: 0.5px; vertical-align: middle;">Corvus Studio</span>
         </div>
+        <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 16px 0 24px;" />
+        <p style="color: #1e293b; font-size: 14px; margin-bottom: 16px; font-weight: 600;">Dear ${employee.full_name},</p>
+        
+        <div style="color: #334155; font-size: 14px; line-height: 1.7; margin-bottom: 16px;">
+          ${aiBody}
+        </div>
+        
+        <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 24px 0 16px;" />
+        <p style="color: #475569; font-size: 12px; line-height: 1.6; margin-bottom: 20px;">
+          If you have any questions or require further details, please reach out to the HR Operations desk at <a href="mailto:careers@thecorvusstudio.com" style="color: #0ea5e9; text-decoration: none; font-weight: 600;">careers@thecorvusstudio.com</a>.
+        </p>
+        <p style="color: #334155; font-size: 14px; margin-top: 24px; line-height: 1.5;">
+          Best Regards,<br/>
+          <strong>HR Operations Team</strong><br/>
+          <span style="color: #64748b; font-size: 12px;">Corvus Studio</span><br/>
+          <a href="mailto:careers@thecorvusstudio.com" style="color: #0ea5e9; text-decoration: none; font-size: 12px;">careers@thecorvusstudio.com</a>
+        </p>
       </div>
+    </div>
     `;
   }
 
