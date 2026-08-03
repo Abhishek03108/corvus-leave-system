@@ -404,7 +404,7 @@ html::-webkit-scrollbar, body::-webkit-scrollbar, *::-webkit-scrollbar {
   margin: 0 48px 8px 48px;
 }
 
-/* â”€â”€ Watermark â”€â”€ */
+/* ─── Watermark ─── */
 .wm {
   position: absolute;
   top: 50%; left: 50%;
@@ -542,10 +542,114 @@ html::-webkit-scrollbar, body::-webkit-scrollbar, *::-webkit-scrollbar {
     margin: 0;
   }
 }
+
 `;
 
-// â”€â”€â”€ Header Block (used on both pages) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-function headerBlock(date, docId) {
+// ─── Shared Document Renderer ───────────────────────────────────────────────
+export function renderDocument(p, title, bodyContent, documentType = 'Offer Letter', options = {}) {
+  const isOfferLetter = documentType === 'Offer Letter';
+
+  // Determine if this document type requires an acknowledgement page
+  const ACK_DOC_TYPES = [
+    'Offer Letter',
+    'Appointment Letter',
+    'Confirmation Letter',
+    'Increment Letter',
+    'Promotion Letter',
+    'Full & Final Settlement Letter',
+    'Warning Letter',
+    'Show Cause Notice',
+    'Probation Extension Letter'
+  ];
+  const requiresAck = ACK_DOC_TYPES.includes(documentType);
+
+  let page2Content = '';
+  if (isOfferLetter) {
+    page2Content = acceptancePage(p, `I understand and accept the terms outlined in this offer letter${p.DURATION && p.DURATION !== 'four (4) months' ? `, including the duration of ${p.DURATION}` : ''}. Either party may conclude this engagement with the prior notice period mentioned above.`);
+  } else if (requiresAck) {
+    page2Content = `
+<div class="page-2">
+  <img src="${LOGO_MARK}" class="wm" alt="">
+  ${headerBlock(p.DATE, p.DOC_ID)}
+  <div class="content">
+    <div class="acc-title">ACKNOWLEDGEMENT &amp; ACCEPTANCE</div>
+    <div class="acc-body">
+      <p>I, <strong>${p.NAME}</strong>, hereby acknowledge receipt of this <strong>${documentType}</strong> reference number <strong>${p.DOC_ID}</strong>. I have read, understood, and accept the terms and guidelines outlined therein.</p>
+      <p>I confirm my signature to this acknowledgement as confirmation of receipt and understanding.</p>
+      <p>Sincerely,</p>
+    </div>
+    <div style="margin-top:18px">
+      <div class="acc-field">
+        <label>Signature:</label>
+        <div class="field-line"></div>
+      </div>
+      <div class="acc-field" style="align-items:center">
+        <label>Name:</label>
+        <strong style="font-size:11pt">${p.NAME}</strong>
+      </div>
+      <div class="acc-field">
+        <label>Date:</label>
+        <div class="field-line"></div>
+      </div>
+    </div>
+    <div class="sig" style="margin-top:22px">
+      <p>Authorized Signatory details and corporate signature are attached to the primary document.</p>
+      <p style="margin-top:8px">Sincerely,</p>
+      <div class="sig-image-container">
+        <img src="${SIGNATURE}" class="sig-image" alt="Signature">
+      </div>
+      <div class="sig-line">
+        <p><strong>Authorized Signatory</strong></p>
+        <p>Corvus Studio</p>
+      </div>
+    </div>
+  </div>
+  ${FOOTER}
+</div>`;
+  }
+
+  // Render sub-titles only for relevant letters with role/department
+  const NO_SUBTITLE_DOCS = [
+    'Warning Letter',
+    'Show Cause Notice',
+    'Salary Certificate',
+    'Employment Verification Certificate',
+    'No Objection Certificate (NOC)',
+    'Experience Letter'
+  ];
+  const showSubtitle = !NO_SUBTITLE_DOCS.includes(documentType);
+
+  const page1Content = `
+<div class="offer-title">${title.toUpperCase()}</div>
+${showSubtitle && p.ROLE ? `<div class="offer-sub">${p.ROLE} &mdash; ${p.DEPT}</div>` : ''}
+<div class="body">
+  ${bodyContent}
+</div>
+${sigBlock()}`;
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>${documentType} — Corvus Studio</title>
+<style>${CSS}</style>
+</head>
+<body>
+<div class="page">
+  <img src="${LOGO_MARK}" class="wm" alt="">
+  ${headerBlock(p.DATE, p.DOC_ID)}
+  <div class="content">
+${page1Content}
+  </div>
+  ${FOOTER}
+</div>
+${page2Content}
+</body>
+</html>`;
+}
+
+// ─── Header Block ─────────────────────────────────────────────────────────────
+function headerBlock(date, docId = '') {
   return `
 <div class="top-stripe"></div>
 <div class="header">
@@ -554,20 +658,21 @@ function headerBlock(date, docId) {
   </div>
   <div class="header-right">
     <div class="header-tagline">Motion that <b>Speaks.</b></div>
-    <div class="header-docid">${docId}</div>
-    <div class="header-date">${date}</div>
+    ${docId ? `<div class="header-docid">Ref: <b>${docId}</b></div>` : ''}
+    <div class="header-date">Date: <b>${date}</b></div>
   </div>
-</div>`;
+</div>
+<hr class="header-line">`;
 }
 
-// â”€â”€â”€ Footer Block â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Footer Block ─────────────────────────────────────────────────────────────
 const FOOTER = `
 <div class="footer">
   <strong>YASH CORPORATION</strong><br>
   Shop No - 04, ALPHONNE COMPLEX, NR PRIMARY SCHOOL, JHALIRAJDA, Junagadh, Gujarat, 360022
 </div>`;
 
-// â”€â”€â”€ Page 2: Acceptance â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Page 2: Acceptance ───────────────────────────────────────────────────────
 function acceptancePage(p, note) {
   return `
 <div class="page-2">
@@ -597,43 +702,17 @@ function acceptancePage(p, note) {
     <div class="sig" style="margin-top:22px">
       <p>We are glad to have you join <span class="co">Corvus Studio</span>, and look forward to building thoughtful, production-ready creative work together.</p>
       <p style="margin-top:8px">Sincerely,</p>
-      <div class="sig-image-container">
-        <img src="${SIGNATURE}" class="sig-image" alt="Signature">
-      </div>
+      <div class="sig-gap"></div>
       <div class="sig-line">
         <p><strong>Authorized Signatory</strong></p>
         <p>Corvus Studio</p>
       </div>
     </div>
   </div>
-  ${FOOTER}
 </div>`;
 }
 
-// â”€â”€â”€ Full Page Wrap â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-function wrap(page1Content, p) {
-  return `<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<title>Offer Letter â€” Corvus Studio</title>
-<style>${CSS}</style>
-</head>
-<body>
-<div class="page">
-  <img src="${LOGO_MARK}" class="wm" alt="">
-  ${headerBlock(p.DATE, p.DOC_ID)}
-  <div class="content">
-${page1Content}
-  </div>
-  ${FOOTER}
-</div>
-${acceptancePage(p, `I understand and accept the terms outlined in this offer letter${p.DURATION && p.DURATION !== 'four (4) months' ? `, including the duration of ${p.DURATION}` : ''}. Either party may conclude this engagement with the prior notice period mentioned above.`)}
-</body>
-</html>`;
-}
-
-// â”€â”€â”€ Signature block â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Signature block ────────────────────────────────────────────────────────
 function sigBlock() {
   return `
 <div class="sig">
@@ -648,14 +727,10 @@ function sigBlock() {
 </div>`;
 }
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// INTERN 3D (exact DOCX paragraph order, Times New Roman body)
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-function intern3d(p) {
-  const page1 = `
-<div class="offer-title">OFFER LETTER</div>
-<div class="offer-sub">${p.ROLE} Internship</div>
-<div class="body">
+// ─── Content Providers ───────────────────────────────────────────────────────
+
+function intern3dBody(p) {
+  return `
 <p class="salutation">Dear <strong>${p.NAME}</strong>,</p>
 <p>On behalf of <span class="co">Corvus Studio</span>, we are pleased to offer you the position of <strong>${p.ROLE}</strong>, working remotely with our production team, effective from <strong>${p.JOINING}</strong>. This internship is intended to provide you with practical, production-oriented experience within our pipeline.</p>
 <p>This is an unpaid, portfolio-building internship for a period of <strong>${p.DURATION}</strong>, concluding on <strong>${p.END_DATE}</strong>, unless terminated earlier in accordance with the notice provision below. This engagement is a voluntary internship and does not constitute an offer of employment, a freelance engagement, or a volunteer programme. Nothing in this letter shall be construed as creating an employer-employee relationship between you and the Studio.</p>
@@ -668,20 +743,11 @@ function intern3d(p) {
 <p>Either party may discontinue this collaboration at any time by providing a minimum notice period of <strong>seven (7) days</strong>, in writing, through email, to allow for an orderly transition of ongoing work.</p>
 <p>Upon satisfactory completion of the internship term, <span class="co">Corvus Studio</span> will issue an <strong>Internship Completion Certificate</strong> acknowledging your role, duration, and contribution.</p>
 <p>As <span class="co">Corvus Studio</span> grows into a more established production environment, there may be opportunities for future paid engagements based on performance, reliability, and contribution. This internship does not entitle you to, and does not guarantee, any future employment, engagement, or compensation with the Studio.</p>
-<p>We look forward to building disciplined, technically strong, and production-ready creative work together.</p>
-</div>
-${sigBlock()}`;
-  return wrap(page1, p);
+<p>We look forward to building disciplined, technically strong, and production-ready creative work together.</p>`;
 }
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// INTERN GENERIC (2D / Concept / HR)
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-function internGeneric(p) {
-  const page1 = `
-<div class="offer-title">OFFER LETTER</div>
-<div class="offer-sub">${p.ROLE} Internship</div>
-<div class="body">
+function internGenericBody(p) {
+  return `
 <p class="salutation">Dear <strong>${p.NAME}</strong>,</p>
 <p>On behalf of <span class="co">Corvus Studio</span>, we are pleased to offer you the position of <strong>${p.ROLE}</strong>, working remotely with our creative team, effective from <strong>${p.JOINING}</strong>. This internship is designed to provide you with hands-on, production-grade creative experience.</p>
 <p>This is an unpaid, portfolio-building internship for a duration of <strong>${p.DURATION}</strong>, concluding on <strong>${p.END_DATE}</strong>, unless terminated earlier per the notice terms below. This engagement is a voluntary internship and does not constitute an offer of employment, a freelance arrangement, or a paid creative contract.</p>
@@ -693,20 +759,9 @@ function internGeneric(p) {
 <p>You are expected to maintain respectful communication, meet agreed deadlines, and uphold the creative standards of the Studio throughout your internship.</p>
 <p>Either party may conclude this engagement with a minimum of <strong>seven (7) days</strong> written notice via email.</p>
 <p>Upon satisfactory completion, <span class="co">Corvus Studio</span> will issue a formal <strong>Internship Completion Certificate</strong> recognising your contribution and role.</p>
-<p>We are excited to have you join our creative team and look forward to growing together.</p>
-</div>
-${sigBlock()}`;
-  return wrap(page1, p);
-}
-
-// ══════════════════════════════════════════════════════════════════════
-// FREELANCER
-// ══════════════════════════════════════════════════════════════════════
-function freelancer(p) {
-  const page1 = `
-<div class="offer-title">FREELANCE ENGAGEMENT LETTER</div>
-<div class="offer-sub">${p.ROLE} &mdash; ${p.DEPT}</div>
-<div class="body">
+<p>We are excited to have you join our creative team and look forward to growing together.</p>`;
+}function freelancerBody(p) {
+  return `
 <p class="salutation">Dear <strong>${p.NAME}</strong>,</p>
 <p>On behalf of <span class="co">Corvus Studio</span>, we are pleased to engage you as a <strong>${p.ROLE}</strong> on a project-based freelance basis, effective from <strong>${p.JOINING}</strong>. This letter formalises the terms of your engagement with the Studio.</p>
 <p>You will be engaged as an independent contractor and not as an employee of <span class="co">Corvus Studio</span>. This arrangement does not create an employer-employee relationship, and you will not be entitled to any employment benefits or statutory entitlements.</p>
@@ -716,20 +771,11 @@ function freelancer(p) {
 <p>All deliverables and creative outputs produced in connection with <span class="co">Corvus Studio</span> projects shall be the sole and exclusive intellectual property of <span class="co">Corvus Studio</span> upon submission and payment.</p>
 <p>You may display publicly released and approved project work in your personal portfolio and professional profiles upon receiving written approval from <span class="co">Corvus Studio</span>.</p>
 <p>Either party may conclude this engagement with a minimum of <strong>fourteen (14) days</strong> prior written notice by email, subject to completion of any outstanding deliverables.</p>
-<p>We look forward to a productive and professional collaboration.</p>
-</div>
-${sigBlock()}`;
-  return wrap(page1, p);
+<p>We look forward to a productive and professional collaboration.</p>`;
 }
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// FULL-TIME
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-function fulltime(p) {
-  const page1 = `
-<div class="offer-title">OFFER OF EMPLOYMENT</div>
-<div class="offer-sub">${p.ROLE} &mdash; ${p.DEPT}</div>
-<div class="body">
+function fulltimeBody(p) {
+  return `
 <p class="salutation">Dear <strong>${p.NAME}</strong>,</p>
 <p>On behalf of <span class="co">Corvus Studio</span>, we are delighted to extend this formal offer of employment for the position of <strong>${p.ROLE}</strong> within the <strong>${p.DEPT}</strong> team, effective from <strong>${p.JOINING}</strong>. You will be reporting to <strong>${p.MANAGER}</strong>.</p>
 <p>Your monthly compensation for this role will be <strong>${p.STIPEND}</strong>, payable in accordance with the Studio's standard payroll cycle. This offer is conditional upon the successful completion of any applicable background verification and onboarding documentation.</p>
@@ -740,20 +786,11 @@ function fulltime(p) {
 <p>All work produced by you in the course of your employment shall be the sole intellectual property of <span class="co">Corvus Studio</span>.</p>
 <p>You will be entitled to leave benefits as per the Studio's Leave Policy communicated through our internal leave management system.</p>
 <p>Post-probation, either party may terminate this employment by providing a minimum notice period of <strong>thirty (30) days</strong>, in writing.</p>
-<p>We look forward to welcoming you to the team.</p>
-</div>
-${sigBlock()}`;
-  return wrap(page1, p);
+<p>We look forward to welcoming you to the team.</p>`;
 }
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// CONTRACT
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-function contract(p) {
-  const page1 = `
-<div class="offer-title">CONTRACT ENGAGEMENT LETTER</div>
-<div class="offer-sub">${p.ROLE} &mdash; ${p.DEPT}</div>
-<div class="body">
+function contractBody(p) {
+  return `
 <p class="salutation">Dear <strong>${p.NAME}</strong>,</p>
 <p>On behalf of <span class="co">Corvus Studio</span>, we are pleased to offer you a fixed-term contract engagement as <strong>${p.ROLE}</strong> within the <strong>${p.DEPT}</strong> team, commencing from <strong>${p.JOINING}</strong>. You will be reporting to <strong>${p.MANAGER}</strong>.</p>
 <p>Your scope of work under this contract will focus on <strong>${p.ROLE}</strong> responsibilities, including ${p.RESPONSIBILITIES}, along with any additional production tasks assigned in connection with active projects.</p>
@@ -762,21 +799,228 @@ function contract(p) {
 <p>You are required to maintain the confidentiality of all proprietary materials, project files, client information, and internal assets accessed during this engagement.</p>
 <p>All work created in connection with <span class="co">Corvus Studio</span> projects during this engagement shall be the exclusive property of <span class="co">Corvus Studio</span>.</p>
 <p>Either party may terminate this engagement early with a minimum of <strong>fourteen (14) days</strong> written notice via email.</p>
-<p>We look forward to a productive collaboration.</p>
-</div>
-${sigBlock()}`;
-  return wrap(page1, p);
+<p>We look forward to a productive collaboration.</p>`;
 }
 
-// â”€â”€â”€ Main Export â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+function parttimeBody(p) {
+  return `
+<p class="salutation">Dear <strong>${p.NAME}</strong>,</p>
+<p>On behalf of <span class="co">Corvus Studio</span>, we are pleased to extend this formal offer of employment for the position of <strong>${p.ROLE}</strong> (Part-time) within the <strong>${p.DEPT}</strong> team, effective from <strong>${p.JOINING}</strong>. You will report to <strong>${p.MANAGER}</strong>.</p>
+<p>Your compensation for this role will be <strong>${p.STIPEND}</strong> per month, payable in accordance with the Studio's standard payroll cycle. You are expected to dedicate approximately twenty (20) hours per week to your responsibilities.</p>
+<p>Your work location will be <strong>${p.LOCATION}</strong>. Your schedule will be arranged flexibly based on mutual availability and project requirements.</p>
+<p>Your responsibilities will focus on <strong>${p.ROLE}</strong> duties, including ${p.RESPONSIBILITIES}, and any other tasks assigned in connection with your designation.</p>
+<p>Your employment will begin with a probationary period of <strong>three (3) months</strong>. During this period, either party may terminate this engagement with a minimum notice of fifteen (15) days.</p>
+<p>You agree to maintain strict confidentiality regarding all proprietary studio information, project files, and internal workflows, both during and after your employment.</p>
+<p>All work produced by you during your employment shall be the sole intellectual property of <span class="co">Corvus Studio</span>.</p>
+<p>Post-probation, either party may terminate this employment by providing a minimum notice period of <strong>thirty (30) days</strong>, in writing.</p>
+<p>We look forward to welcoming you to the team.</p>`;
+}
+
+function appointmentLetterContent(p) {
+  return `
+<p class="salutation">Dear <strong>${p.NAME}</strong>,</p>
+<p>We are pleased to appoint you to the position of <strong>${p.ROLE}</strong> within the <strong>${p.DEPT}</strong> department at <span class="co">Corvus Studio</span>, effective from your date of joining <strong>${p.JOINING}</strong>. You will report directly to <strong>${p.MANAGER}</strong>.</p>
+<p>Your employment will be governed by the standard policies, code of conduct, and employment guidelines of the studio. Your current work location is designated as <strong>${p.LOCATION}</strong>, and you are expected to perform the duties associated with your role and designation.</p>
+<p>Your responsibilities in this capacity will include ${p.RESPONSIBILITIES}. You will also cooperate on active production schedules and tasks assigned by leadership.</p>
+<p>Your monthly compensation is established at <strong>${p.STIPEND}</strong>, subject to statutory deductions. You will be on probation for a period of three (3) months, after which your employment will be confirmed subject to satisfactory performance.</p>
+<p>Please maintain strict confidentiality regarding all proprietary projects, client assets, and internal workflows. All creative materials produced during your tenure remain the exclusive property of <span class="co">Corvus Studio</span>.</p>
+<p>We congratulate you on your appointment and look forward to a successful association.</p>`;
+}
+
+function confirmationLetterContent(p) {
+  return `
+<p class="salutation">Dear <strong>${p.NAME}</strong>,</p>
+<p>Following the successful completion of your probation period on <strong>${p.JOINING}</strong> and the subsequent review of your performance, we are delighted to confirm your appointment as a permanent employee at <span class="co">Corvus Studio</span> in the position of <strong>${p.ROLE}</strong> within the <strong>${p.DEPT}</strong> department.</p>
+<p>Since joining the studio, your dedication, professionalism, and creative contributions have aligned with our production standards. In this confirmed capacity, your responsibilities will continue to center on <strong>${p.ROLE}</strong> duties, including ${p.RESPONSIBILITIES}.</p>
+<p>All other terms and conditions of your employment, including your current monthly salary of <strong>${p.STIPEND}</strong>, work location of <strong>${p.LOCATION}</strong>, and standard confidentiality covenants, will remain in full force as per your initial appointment letter.</p>
+<p>We appreciate your valuable efforts and look forward to your continued growth and success with Corvus Studio.</p>`;
+}
+
+function experienceLetterContent(p) {
+  return `
+<p class="salutation">TO WHOMSOEVER IT MAY CONCERN,</p>
+<p>This is to certify that <strong>${p.NAME}</strong> was employed with <span class="co">Corvus Studio</span> in the position of <strong>${p.ROLE}</strong> within the <strong>${p.DEPT}</strong> department from <strong>${p.JOINING}</strong> to <strong>${p.END_DATE}</strong>.</p>
+<p>During their tenure with us, they were responsible for ${p.RESPONSIBILITIES}. They demonstrated high professionalism, technical competence, and a collaborative team attitude in executing their deliverables.</p>
+<p>We have no hesitation in recommending them for future opportunities and wish them success in all their future pursuits.</p>`;
+}
+
+function relievingLetterContent(p) {
+  return `
+<p class="salutation">Dear <strong>${p.NAME}</strong>,</p>
+<p>We are writing to confirm that you are officially relieved from your duties as <strong>${p.ROLE}</strong> in the <strong>${p.DEPT}</strong> department at <span class="co">Corvus Studio</span>, effective from the close of business hours on <strong>${p.END_DATE}</strong>.</p>
+<p>This follows the acceptance of your resignation. We confirm that you have successfully completed all handovers of assets, files, and project repositories, and that your final dues have been fully settled in accordance with the studio's policies.</p>
+<p>We record our appreciation for the services rendered by you during your tenure from <strong>${p.JOINING}</strong> to <strong>${p.END_DATE}</strong>. Your conduct during this association was professional and cooperative.</p>
+<p>We wish you the very best in your future professional endeavors.</p>`;
+}
+
+function salaryCertificateContent(p) {
+  return `
+<p class="salutation">TO WHOMSOEVER IT MAY CONCERN,</p>
+<p>This is to certify that <strong>${p.NAME}</strong> is currently employed with <span class="co">Corvus Studio</span> as a <strong>${p.ROLE}</strong> in the <strong>${p.DEPT}</strong> department, since their joining date of <strong>${p.JOINING}</strong>.</p>
+<p>Their current monthly gross salary is <strong>${p.STIPEND}</strong>, which is paid directly to their registered bank account. This certificate is issued upon the employee's request for verification purposes.</p>
+<p>For any further validation, please feel free to reach out to the HR Operations desk.</p>`;
+}
+
+function employmentVerificationCertificateContent(p) {
+  return `
+<p class="salutation">TO WHOMSOEVER IT MAY CONCERN,</p>
+<p>This is to certify and verify that <strong>${p.NAME}</strong> is employed with <span class="co">Corvus Studio</span> as a <strong>${p.ROLE}</strong> within the <strong>${p.DEPT}</strong> department, since <strong>${p.JOINING}</strong>.</p>
+<p>During their employment, they have demonstrated high professionalism and compliance with the studio's standards. Their employment status is active and in good standing.</p>
+<p>This certificate is issued at the request of the employee for verification of employment purposes.</p>`;
+}
+
+function incrementLetterContent(p) {
+  return `
+<p class="salutation">Dear <strong>${p.NAME}</strong>,</p>
+<p>Consequent to the recent review of your performance and your valuable contributions to the studio, we are pleased to inform you that your monthly gross compensation has been incremented to <strong>${p.STIPEND}</strong>, effective from <strong>${p.JOINING}</strong>.</p>
+<p>In this period of growth for the studio, we highly value your dedication as a <strong>${p.ROLE}</strong> in the <strong>${p.DEPT}</strong> department. Your role-specific responsibilities will continue to include ${p.RESPONSIBILITIES}.</p>
+<p>All other terms and conditions of your employment, including confidentiality, work hours, and intellectual property ownership, remain unchanged.</p>
+<p>We congratulate you on your performance-based increment and look forward to your continued contribution to the studio's success.</p>`;
+}
+
+function promotionLetterContent(p) {
+  return `
+<p class="salutation">Dear <strong>${p.NAME}</strong>,</p>
+<p>In recognition of your exceptional performance, dedication, and leadership contributions, we are delighted to promote you to the position of <strong>${p.ROLE}</strong> within the <strong>${p.DEPT}</strong> department at <span class="co">Corvus Studio</span>, effective from <strong>${p.JOINING}</strong>.</p>
+<p>In this elevated capacity, you will assume oversight and leadership of <strong>${p.ROLE}</strong> functions, including ${p.RESPONSIBILITIES}. You will also work closely with project directors to optimize team workflows and production schedules.</p>
+<p>Consequent to your promotion, your monthly compensation is revised to <strong>${p.STIPEND}</strong>. All other terms of your employment, including confidentiality and proprietary work covenants, remain unchanged.</p>
+<p>We congratulate you on this milestone and are confident that you will continue to guide the studio towards outstanding creative success.</p>`;
+}
+
+function resignationAcceptanceLetterContent(p) {
+  return `
+<p class="salutation">Dear <strong>${p.NAME}</strong>,</p>
+<p>We are writing to formally accept your resignation from the position of <strong>${p.ROLE}</strong> within the <strong>${p.DEPT}</strong> department at <span class="co">Corvus Studio</span>, which was submitted on <strong>${p.DATE}</strong>.</p>
+<p>Your resignation has been accepted and you will be relieved from your duties at the close of business hours on <strong>${p.END_DATE}</strong>. You are requested to complete all pending handovers of assets, code repositories, design files, and documentation to your team lead prior to your departure.</p>
+<p>Your final settlement, including any outstanding dues and relieving certificates, will be processed and disbursed in due course following your clear clearance from all departments.</p>
+<p>We thank you for your contributions to Corvus Studio and wish you success in your future endeavors.</p>`;
+}
+
+function fullAndFinalSettlementLetterContent(p) {
+  return `
+<p class="salutation">Dear <strong>${p.NAME}</strong>,</p>
+<p>This letter details the final settlement of your accounts with <span class="co">Corvus Studio</span> following the conclusion of your services as <strong>${p.ROLE}</strong> in the <strong>${p.DEPT}</strong> department on <strong>${p.END_DATE}</strong>.</p>
+<p>We confirm that all outstanding dues, salary payments, and reimbursements have been computed and settled. The final net payable amount of <strong>${p.STIPEND}</strong> has been disbursed to your registered bank account, and all department clearances have been successfully processed.</p>
+<p>With this payment, all financial and operational obligations between you and <span class="co">Corvus Studio</span> are fully resolved. We thank you for your cooperation during the offboarding process and wish you all the best in your career.</p>`;
+}
+
+function noObjectionCertificateContent(p) {
+  return `
+<p class="salutation">TO WHOMSOEVER IT MAY CONCERN,</p>
+<p>This is to certify that <strong>${p.NAME}</strong> is employed with <span class="co">Corvus Studio</span> as a <strong>${p.ROLE}</strong> within the <strong>${p.DEPT}</strong> department, since <strong>${p.JOINING}</strong>.</p>
+<p>The studio hereby states that it has no objection to <strong>${p.NAME}</strong> pursuing higher education / applying for a visa / participating in external educational events, and supports their professional development.</p>
+<p>This certificate is issued at the request of the employee and is valid for the purposes of verification.</p>`;
+}
+
+function appreciationLetterContent(p) {
+  return `
+<p class="salutation">Dear <strong>${p.NAME}</strong>,</p>
+<p>We are writing to express our sincere appreciation for your exemplary performance and dedication as a <strong>${p.ROLE}</strong> in the <strong>${p.DEPT}</strong> department at <span class="co">Corvus Studio</span>.</p>
+<p>Your recent contributions, particularly regarding asset creation and pipeline optimization, have been key to the success of our projects. Your ability to consistently deliver high-quality work, solve creative issues, and support fellow team members represents the standard of excellence we value at Corvus Studio.</p>
+<p>We thank you for your commitment and outstanding effort. We are proud to have you on our team and look forward to achieving many more creative milestones together.</p>`;
+}
+
+function warningLetterContent(p) {
+  return `
+<p class="salutation">Dear <strong>${p.NAME}</strong>,</p>
+<p>This is a formal warning letter regarding your performance and/or conduct in the capacity of <strong>${p.ROLE}</strong> in the <strong>${p.DEPT}</strong> department at <span class="co">Corvus Studio</span>.</p>
+<p>It has been observed that your recent deliverables and attendance patterns have fell short of the professional standards expected of your designation, specifically concerning project handovers and deadlines. This is causing unexpected blockages in the production pipeline.</p>
+<p>You are hereby advised to take immediate corrective measures. You are expected to show significant improvement in your outputs and general conduct starting from <strong>${p.JOINING}</strong>. Failure to do so may lead to further disciplinary action, up to and including termination of your engagement.</p>
+<p>Please connect with your manager immediately to establish a Performance Improvement Plan (PIP).</p>`;
+}
+
+function showCauseNoticeContent(p) {
+  return `
+<p class="salutation">Dear <strong>${p.NAME}</strong>,</p>
+<p>This is a formal Show Cause Notice issued regarding recent observations of non-compliance with the studio's operational guidelines, specifically concerning persistent unexcused absences and failure to meet key deliverables for active projects.</p>
+<p>As a <strong>${p.ROLE}</strong> in the <strong>${p.DEPT}</strong> department, you are expected to maintain professional code of conduct and coordinate with your manager. Your recent actions have led to delays in the studio's production schedules.</p>
+<p>You are hereby required to submit a written explanation showing cause why disciplinary action should not be initiated against you, within forty-eight (48) hours of receipt of this notice. Failure to respond or provide a satisfactory explanation will result in appropriate action as per the studio's HR policy.</p>`;
+}
+
+function probationExtensionLetterContent(p) {
+  return `
+<p class="salutation">Dear <strong>${p.NAME}</strong>,</p>
+<p>This is to inform you that your probation period at <span class="co">Corvus Studio</span> as <strong>${p.ROLE}</strong> in the <strong>${p.DEPT}</strong> department has been extended by a duration of <strong>${p.DURATION}</strong>, now concluding on <strong>${p.END_DATE}</strong>.</p>
+<p>While we appreciate your efforts during the initial probation period, we believe that further time is required to evaluate your consistency, technical output, and integration into the team workflow. This extension is intended to provide you with the opportunity to address these areas and meet our standard benchmarks.</p>
+<p>Your performance will be closely reviewed during this extended period, and a formal review will be conducted on or before the new end date to determine the confirmation of your employment status.</p>`;
+}
+
 export function generateOfferLetterHtml(employee, documentId, options = {}) {
   const p = buildPlaceholders(employee, documentId, options);
-  switch (selectTemplate(employee, options)) {
-    case 'intern_generic': return internGeneric(p);
-    case 'freelancer':     return freelancer(p);
-    case 'contract':       return contract(p);
-    case 'parttime':       return parttime(p);
-    case 'fulltime':       return fulltime(p);
-    default:               return intern3d(p);
+  const documentType = options.documentType || 'Offer Letter';
+
+  if (documentType === 'Offer Letter') {
+    let body = '';
+    const temp = selectTemplate(employee, options);
+    if (temp === 'intern_generic') {
+      body = internGenericBody(p);
+    } else if (temp === 'freelancer') {
+      body = freelancerBody(p);
+    } else if (temp === 'contract') {
+      body = contractBody(p);
+    } else if (temp === 'parttime') {
+      body = parttimeBody(p);
+    } else if (temp === 'fulltime') {
+      body = fulltimeBody(p);
+    } else {
+      body = intern3dBody(p);
+    }
+    return renderDocument(p, 'OFFER LETTER', body, 'Offer Letter', options);
   }
+
+  // Handle other document types using their respective content providers
+  let body = '';
+  switch (documentType) {
+    case 'Appointment Letter':
+      body = appointmentLetterContent(p);
+      break;
+    case 'Confirmation Letter':
+      body = confirmationLetterContent(p);
+      break;
+    case 'Experience Letter':
+      body = experienceLetterContent(p);
+      break;
+    case 'Relieving Letter':
+      body = relievingLetterContent(p);
+      break;
+    case 'Salary Certificate':
+      body = salaryCertificateContent(p);
+      break;
+    case 'Employment Verification Certificate':
+      body = employmentVerificationCertificateContent(p);
+      break;
+    case 'Increment Letter':
+      body = incrementLetterContent(p);
+      break;
+    case 'Promotion Letter':
+      body = promotionLetterContent(p);
+      break;
+    case 'Resignation Acceptance Letter':
+      body = resignationAcceptanceLetterContent(p);
+      break;
+    case 'Full & Final Settlement Letter':
+      body = fullAndFinalSettlementLetterContent(p);
+      break;
+    case 'No Objection Certificate (NOC)':
+      body = noObjectionCertificateContent(p);
+      break;
+    case 'Appreciation Letter':
+      body = appreciationLetterContent(p);
+      break;
+    case 'Warning Letter':
+      body = warningLetterContent(p);
+      break;
+    case 'Show Cause Notice':
+      body = showCauseNoticeContent(p);
+      break;
+    case 'Probation Extension Letter':
+      body = probationExtensionLetterContent(p);
+      break;
+    default:
+      body = `
+<p class="salutation">Dear <strong>${p.NAME}</strong>,</p>
+<p>Please find this official document for your reference.</p>`;
+  }
+
+  return renderDocument(p, documentType, body, documentType, options);
 }
