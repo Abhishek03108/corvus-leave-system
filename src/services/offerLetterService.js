@@ -133,6 +133,18 @@ export function buildPlaceholders(emp, docId, opts = {}) {
     PAID_UNPAID:         opts.paidUnpaid          || 'Paid',
     MOBILE:              opts.mobileNumber        || null,
     OFFICE_LOCATION:     opts.officeLocation      || null,
+    // Optional earnings & deductions for Salary Slip / Certificate
+    OTHER_ALLOWANCES:    opts.otherAllowances     || null,
+    BONUS:               opts.bonus               || null,
+    INCENTIVES:          opts.incentives          || null,
+    PROF_TAX:            opts.profTax             || null,
+    INCOME_TAX:          opts.incomeTax           || null,
+    LEAVE_DEDUCTION:     opts.leaveDeduction      || null,
+    OTHER_DEDUCTIONS:    opts.otherDeductions     || null,
+    // Salary slip period & addressee
+    SALARY_SLIP_RANGE:   opts.salarySlipRange     || null,
+    SALARY_SLIP_START:   opts.salarySlipStartMonth || null,
+    RECIPIENT_TITLE:     opts.recipientTitle      || null,
   };
 }
 
@@ -1083,31 +1095,140 @@ function relievingLetterContent(p) {
 
 function salaryCertificateContent(p) {
   const fmt = n => Math.round(Number(n) || 0).toLocaleString('en-IN');
-  
-  const basic = Number(p.BASIC_SALARY) || 0;
-  const hra = Number(p.HRA) || 0;
-  const special = Number(p.SPECIAL_ALLOWANCE) || 0;
-  const otherAllowances = Number(p.OTHER_ALLOWANCES) || 0;
-  const bonus = Number(p.BONUS) || 0;
-  const incentives = Number(p.INCENTIVES) || 0;
 
-  const employeePF = Number(p.EMPLOYEE_PF) || 0;
-  const profTax = Number(p.PROF_TAX) || 0;
-  const incomeTax = Number(p.INCOME_TAX) || 0;
-  const leaveDeduction = Number(p.LEAVE_DEDUCTION) || 0;
+  // ── Salary components ──────────────────────────────────────
+  const basic           = Number(p.BASIC_SALARY)    || 0;
+  const hra             = Number(p.HRA)              || 0;
+  const special         = Number(p.SPECIAL_ALLOWANCE)|| 0;
+  const otherAllowances = Number(p.OTHER_ALLOWANCES) || 0;
+  const bonus           = Number(p.BONUS)            || 0;
+  const incentives      = Number(p.INCENTIVES)       || 0;
+
+  const employeePF      = Number(p.EMPLOYEE_PF)      || 0;
+  const profTax         = Number(p.PROF_TAX)         || 0;
+  const incomeTax       = Number(p.INCOME_TAX)       || 0;
+  const leaveDeduction  = Number(p.LEAVE_DEDUCTION)  || 0;
   const otherDeductions = Number(p.OTHER_DEDUCTIONS) || 0;
 
-  const gross = Number(p.GROSS_SALARY) || (basic + hra + special);
-  const totalEarnings = gross + otherAllowances + bonus + incentives;
+  const gross           = Number(p.GROSS_SALARY) || (basic + hra + special);
+  const totalEarnings   = gross + otherAllowances + bonus + incentives;
   const totalDeductions = employeePF + profTax + incomeTax + leaveDeduction + otherDeductions;
-  const netTakeHome = totalEarnings - totalDeductions;
+  const netTakeHome     = totalEarnings - totalDeductions;
 
-  return `
-<p class="salutation">To Whom It May Concern,</p>
-<p>This is to certify that <strong>${p.NAME}</strong> (Employee ID: <strong>${p.DOC_ID}</strong>) is currently employed with <span class="co">Corvus Studio</span> as <strong>${p.ROLE}</strong> in the <strong>${p.DEPT}</strong> department with effect from <strong>${p.JOINING}</strong>.</p>
+  // ── Dynamic salutation ────────────────────────────────────
+  function getSalutation(purpose, recipient) {
+    if (recipient && recipient.trim()) {
+      const r = recipient.trim();
+      return r.startsWith('To ') ? r + ',' : 'To ' + r + ',';
+    }
+    if (!purpose) return 'To Whom It May Concern,';
+    const p2 = purpose.toLowerCase();
+    if (p2.includes('bank') || p2.includes('loan') || p2.includes('mortgage') || p2.includes('credit'))
+      return 'To the Branch Manager / Loan Processing Authority,';
+    if (p2.includes('visa') || p2.includes('embassy') || p2.includes('consulate') || p2.includes('immigration'))
+      return 'To the Consular Officer / Visa Processing Authority,';
+    if (p2.includes('education') || p2.includes('university') || p2.includes('college') || p2.includes('study') || p2.includes('admission'))
+      return 'To the Admissions Authority,';
+    if (p2.includes('insurance'))
+      return 'To the Insurance Authority,';
+    if (p2.includes('rent') || p2.includes('housing') || p2.includes('landlord') || p2.includes('tenancy'))
+      return 'To the Concerned Housing Authority,';
+    if (p2.includes('pf') || p2.includes('provident') || p2.includes('epfo'))
+      return 'To the EPFO / Provident Fund Authority,';
+    if (p2.includes('passport'))
+      return 'To the Passport Issuing Authority,';
+    if (p2.includes('tax') || p2.includes('itr') || p2.includes('income tax'))
+      return 'To the Income Tax Authority,';
+    return 'To Whom It May Concern,';
+  }
+  const salutation = getSalutation(p.NOC_PURPOSE || p.SALARY_PERIOD, p.RECIPIENT_TITLE);
 
-<div style="margin-top:15px; margin-bottom:15px">
-  <div style="font-weight:bold; font-size:11pt; border-bottom:1px solid #1a1a1a; padding-bottom:3px; margin-bottom:6px">SALARY STATEMENT</div>
+  // ── Month list helper ─────────────────────────────────────
+  function getMonthList(startStr, count) {
+    const MONTHS = ['January','February','March','April','May','June',
+                    'July','August','September','October','November','December'];
+    const SHORT  = ['Jan','Feb','Mar','Apr','May','Jun',
+                    'Jul','Aug','Sep','Oct','Nov','Dec'];
+    const list = [];
+    // startStr: "2025-01" (from <input type=month>) or "2025-01-01"
+    const [yr, mo] = (startStr || '').split('-').map(Number);
+    const base = (yr && mo) ? new Date(yr, mo - 1, 1) : new Date();
+    for (let i = 0; i < count; i++) {
+      const d = new Date(base);
+      d.setMonth(base.getMonth() + i);
+      list.push({ label: SHORT[d.getMonth()] + ' ' + d.getFullYear(), full: MONTHS[d.getMonth()] + ' ' + d.getFullYear() });
+    }
+    return list;
+  }
+
+  // ── Parse range ────────────────────────────────────────────
+  const rangeStr = p.SALARY_SLIP_RANGE || '';
+  const rangeCount = rangeStr.startsWith('3') ? 3
+                   : rangeStr.startsWith('6') ? 6
+                   : rangeStr.startsWith('12') ? 12
+                   : 0;  // 0 = single-month mode
+
+  const months = rangeCount > 0 ? getMonthList(p.SALARY_SLIP_START, rangeCount) : [];
+
+  // ── Multi-month disbursement table ────────────────────────
+  function buildRangeTable() {
+    const cumEarnings   = totalEarnings   * rangeCount;
+    const cumDeductions = totalDeductions * rangeCount;
+    const cumNet        = netTakeHome     * rangeCount;
+
+    const rows = months.map(m => `
+      <tr>
+        <td style="white-space:nowrap"><strong>${m.label}</strong></td>
+        <td class="amount">&#8377;&nbsp;${fmt(basic)}</td>
+        <td class="amount">&#8377;&nbsp;${fmt(hra)}</td>
+        <td class="amount">&#8377;&nbsp;${fmt(special + otherAllowances)}</td>
+        <td class="amount">${(bonus + incentives) > 0 ? '&#8377;&nbsp;' + fmt(bonus + incentives) : '—'}</td>
+        <td class="amount" style="font-weight:600">&#8377;&nbsp;${fmt(totalEarnings)}</td>
+        <td class="amount">&#8377;&nbsp;${fmt(totalDeductions)}</td>
+        <td class="amount" style="font-weight:700;color:#1a6b3c">&#8377;&nbsp;${fmt(netTakeHome)}</td>
+      </tr>`).join('');
+
+    return `
+<div style="margin-top:18px;margin-bottom:10px">
+  <div style="font-weight:bold;font-size:10.5pt;border-bottom:1.5px solid #1a1a1a;padding-bottom:3px;margin-bottom:6px">
+    SALARY DISBURSEMENT STATEMENT — ${months[0].full} to ${months[months.length - 1].full}
+  </div>
+  <table style="width:100%;border-collapse:collapse;font-size:8.5pt">
+    <thead>
+      <tr style="background:#1a1a1a;color:#fff">
+        <th style="padding:5px 6px;text-align:left;white-space:nowrap">Month</th>
+        <th style="padding:5px 6px;text-align:right">Basic</th>
+        <th style="padding:5px 6px;text-align:right">HRA</th>
+        <th style="padding:5px 6px;text-align:right">Allowances</th>
+        <th style="padding:5px 6px;text-align:right">Bonus / Inc.</th>
+        <th style="padding:5px 6px;text-align:right">Gross</th>
+        <th style="padding:5px 6px;text-align:right">Deductions</th>
+        <th style="padding:5px 6px;text-align:right">Net Pay</th>
+      </tr>
+    </thead>
+    <tbody style="font-size:8pt">
+      ${rows}
+    </tbody>
+    <tfoot>
+      <tr style="background:#f5f5f5;border-top:2px solid #1a1a1a;font-weight:bold">
+        <td style="padding:5px 6px">CUMULATIVE</td>
+        <td class="amount">&#8377;&nbsp;${fmt(basic * rangeCount)}</td>
+        <td class="amount">&#8377;&nbsp;${fmt(hra * rangeCount)}</td>
+        <td class="amount">&#8377;&nbsp;${fmt((special + otherAllowances) * rangeCount)}</td>
+        <td class="amount">${(bonus + incentives) > 0 ? '&#8377;&nbsp;' + fmt((bonus + incentives) * rangeCount) : '—'}</td>
+        <td class="amount" style="font-weight:700">&#8377;&nbsp;${fmt(cumEarnings)}</td>
+        <td class="amount">&#8377;&nbsp;${fmt(cumDeductions)}</td>
+        <td class="amount" style="color:#1a6b3c;font-size:9pt">&#8377;&nbsp;${fmt(cumNet)}</td>
+      </tr>
+    </tfoot>
+  </table>
+</div>`;
+  }
+
+  // ── Single-month salary statement ─────────────────────────
+  const singleMonthTable = `
+<div style="margin-top:15px;margin-bottom:15px">
+  <div style="font-weight:bold;font-size:11pt;border-bottom:1px solid #1a1a1a;padding-bottom:3px;margin-bottom:6px">SALARY STATEMENT${rangeCount === 0 && p.SALARY_SLIP_START ? ' — ' + getMonthList(p.SALARY_SLIP_START, 1)[0].full : ''}</div>
   <table class="breakdown-table">
     <thead>
       <tr><th colspan="2">Earnings</th><th colspan="2">Deductions</th></tr>
@@ -1149,9 +1270,15 @@ function salaryCertificateContent(p) {
       </tr>
     </tfoot>
   </table>
-</div>
+</div>`;
 
-<p>This certificate is issued at the request of the employee for loan / visa / bank / personal purposes only and should not be construed as a guarantee of continued employment.</p>`;
+  return `
+<p class="salutation">${salutation}</p>
+<p>This is to certify that <strong>${p.NAME}</strong> (Employee ID: <strong>${p.DOC_ID}</strong>) is currently employed with <span class="co">Corvus Studio</span> as <strong>${p.ROLE}</strong> in the <strong>${p.DEPT}</strong> department with effect from <strong>${p.JOINING}</strong>.</p>
+
+${rangeCount > 0 ? singleMonthTable + buildRangeTable() : singleMonthTable}
+
+<p>This certificate is issued at the request of the employee for ${p.NOC_PURPOSE || 'official'} purposes only and should not be construed as a guarantee of continued employment.</p>`;
 }
 
 function employmentVerificationCertificateContent(p) {
