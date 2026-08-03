@@ -1,6 +1,8 @@
 -- Step 1: Add only the truly missing columns to users
 ALTER TABLE users ADD COLUMN employee_type TEXT DEFAULT 'Full Time';
 ALTER TABLE users ADD COLUMN personal_email TEXT;
+ALTER TABLE users ADD COLUMN leaving_date TEXT;
+ALTER TABLE users ADD COLUMN leaving_reason TEXT;
 
 -- Step 2: Create missing tables
 CREATE TABLE IF NOT EXISTS leave_types (

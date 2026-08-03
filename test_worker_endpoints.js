@@ -21,15 +21,35 @@ async function run() {
     { cwd: process.cwd(), encoding: 'utf-8' }
   );
   const parsed = JSON.parse(raw);
-  const otp = parsed[0]?.results?.[0]?.otp_hash;
-  if (!otp) { console.error('Could not read OTP from D1'); process.exit(1); }
-  console.log('\n== OTP from D1 ==', otp);
+  const otpHash = parsed[0]?.results?.[0]?.otp_hash;
+  if (!otpHash) { console.error('Could not read OTP from D1'); process.exit(1); }
+  console.log('\n== OTP Hash from D1 ==', otpHash);
+
+  // Brute-force the 6-digit OTP from the SHA-256 hash
+  const crypto = await import('crypto');
+  function sha256(input) {
+    return crypto.createHash('sha256').update(input).digest('hex');
+  }
+  console.log('Resolving original 6-digit OTP from hash...');
+  let resolvedOtp = null;
+  for (let i = 100000; i <= 999999; i++) {
+    const candidate = String(i);
+    if (sha256(candidate) === otpHash) {
+      resolvedOtp = candidate;
+      break;
+    }
+  }
+  if (!resolvedOtp) {
+    console.error('Could not resolve OTP from hash');
+    process.exit(1);
+  }
+  console.log('Resolved OTP:', resolvedOtp);
 
   console.log('\n== STEP 2: Verify OTP ==');
   const r2 = await fetch(`${BASE}/api/v1/auth/verify-otp`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email: EMAIL, otp }),
+    body: JSON.stringify({ email: EMAIL, otp: resolvedOtp }),
   });
   const d2 = await r2.json();
   const token = d2.accessToken;

@@ -1180,6 +1180,33 @@ app.on('GET', ['/api/v1/user/list', '/user/list'], auth, async (c) => {
   });
 });
 
+app.on('GET', ['/api/v1/admin/employees/ex', '/admin/employees/ex'], auth, async (c) => {
+  const usersResult = await c.env.DB.prepare(
+    `SELECT id, full_name, work_email, role, status, designation, department, employee_type, joining_date, dob, contact_number, personal_email, leaving_date, leaving_reason
+     FROM users WHERE status = 'inactive' ORDER BY leaving_date DESC, full_name ASC`
+  ).all();
+
+  return c.json({
+    status: 'success',
+    data: usersResult.results.map((u) => ({
+      id: u.id,
+      fullName: u.full_name,
+      workEmail: u.work_email,
+      role: u.role,
+      status: u.status,
+      designation: u.designation,
+      department: u.department,
+      employeeType: u.employee_type,
+      joiningDate: u.joining_date,
+      dob: u.dob,
+      contactNumber: u.contact_number,
+      personalEmail: u.personal_email,
+      leavingDate: u.leaving_date,
+      leavingReason: u.leaving_reason
+    }))
+  });
+});
+
 // ─── Holiday Routes ──────────────────────────────────────────────────────────
 
 app.on('GET', ['/api/v1/holiday/upcoming', '/holiday/upcoming'], auth, async (c) => {
@@ -1760,15 +1787,20 @@ app.on('DELETE', ['/api/v1/admin/employee/:id', '/admin/employee/:id'], auth, re
     return c.json({ status: 'fail', message: 'Employee not found.' }, 404);
   }
 
-  // Delete in dependency order: leave_balances → leave_requests → users
-  await c.env.DB.prepare(`DELETE FROM leave_balances WHERE user_id = ?`).bind(id).run();
-  await c.env.DB.prepare(`DELETE FROM leave_requests WHERE employee_id = ?`).bind(id).run();
-  await c.env.DB.prepare(`DELETE FROM users WHERE id = ?`).bind(id).run();
+  // Parse optional soft-delete body params
+  const body = await c.req.json().catch(() => ({}));
+  const leavingReason = body.leaving_reason || 'Removed by Admin';
+  const leavingDate = body.leaving_date || new Date().toISOString().split('T')[0];
+
+  // Soft delete: update status = 'inactive', leaving_date, and leaving_reason
+  await c.env.DB.prepare(
+    `UPDATE users SET status = 'inactive', leaving_date = ?, leaving_reason = ? WHERE id = ?`
+  ).bind(leavingDate, leavingReason, id).run();
 
   // Audit log — no email sent per spec
   await c.env.DB.prepare(
     `INSERT INTO audit_logs (action, performed_by, target_user_id, details, created_at) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)`
-  ).bind('EMPLOYEE_REMOVED', jwtUser.userId, id, `Removed: ${emp.full_name} (${emp.work_email})`).run();
+  ).bind('EMPLOYEE_REMOVED', jwtUser.userId, id, `Removed (Soft Delete): ${emp.full_name} (${emp.work_email})`).run();
 
   return c.json({ status: 'success', message: `Employee ${emp.full_name} has been removed.` });
 });
