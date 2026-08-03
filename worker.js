@@ -2214,20 +2214,22 @@ async function generateAiEmailBody(c, document_type, employee, jobRole) {
   }
 
   try {
-    const prompt = `Write a professional, context-appropriate email body paragraphs for an employee receiving a "${document_type}" from their company "The Corvus Studio".
-The employee is "${employee.full_name}" who works as a "${jobRole}".
-The email should explain the purpose of the attached "${document_type}" and detail any next steps or requirements in a helpful, professional tone.
-Requirements:
-1. Do NOT include a subject line.
-2. Do NOT write the greeting (e.g., "Dear ...") or the sign-off (e.g., "Best Regards...").
-3. Return only the core message body formatted in clean HTML paragraphs (<p> or <ul>/<li>).
-4. Make the content highly relevant to the specific context of a "${document_type}" for a "${jobRole}".`;
+    const prompt = `Write a formal, corporate, to-the-point email body (paragraphs) for an employee receiving a "${document_type}" from their company "The Corvus Studio".
+The employee is "${employee.full_name}" who is designated as "${jobRole}".
+The email must explain the business purpose of the attached "${document_type}" and any immediate actions required, in a direct and professional HR tone.
+
+Strict Style Guidelines:
+1. No conversational fluff or filler sentences (do NOT say: "Hope this email finds you well", "We are pleased/thrilled/excited to...", "Congratulations!", "We hope you are doing well").
+2. No AI-like jargon, emojis, or exclamation marks. Keep it completely formal and human.
+3. No markdown formatting (do NOT use asterisks, backticks, or hashes, e.g., **bold**, *italic*). Use standard HTML bold tags (<strong>) if emphasizing a name or document type.
+4. Do NOT write any greeting (e.g. "Dear ...") or sign-off/signature block (e.g. "Best regards...").
+5. Return ONLY the body paragraphs formatted in clean HTML (<p> or <ul>/<li>). No outer wrapper, no conversational chatter.`;
 
     const result = await c.env.AI.run('@cf/meta/llama-3.1-8b-instruct', {
       messages: [
         {
           role: 'system',
-          content: 'You are a professional HR assistant. You generate clean, well-formatted email body HTML paragraphs. You do not return any conversational chatter or greetings, only the requested HTML tags.'
+          content: 'You are a senior corporate HR Director. You draft direct, formal, and concise email body paragraphs in clean HTML. You never include conversational introductions, greetings, signature blocks, markdown bold tags (**), or generic AI phrases.'
         },
         {
           role: 'user',
@@ -2287,16 +2289,13 @@ function getEmailBody(document_type, employee, jobRole) {
     case 'Appointment Letter':
       body = `
         <p style="color: #334155; font-size: 14px; line-height: 1.7; margin-bottom: 16px;">
-          We are thrilled to extend this offer of employment for the position of <strong>${jobRole}</strong> at <strong>The Corvus Studio</strong>.
+          Please find the official <strong>${document_type}</strong> for the position of <strong>${jobRole}</strong> at <strong>The Corvus Studio</strong> attached to this email.
         </p>
         <p style="color: #334155; font-size: 14px; line-height: 1.7; margin-bottom: 16px;">
-          Please find your official <strong>${document_type}</strong> attached to this email. Kindly review the terms carefully, sign where indicated, and return the signed copy to <a href="mailto:careers@thecorvusstudio.com" style="color: #0ea5e9; text-decoration: none; font-weight: 600;">careers@thecorvusstudio.com</a> to confirm your acceptance.
+          Kindly review the terms and conditions carefully. To confirm your acceptance of this offer, please sign the document where indicated and return the executed copy to <a href="mailto:careers@thecorvusstudio.com" style="color: #0ea5e9; text-decoration: none; font-weight: 600;">careers@thecorvusstudio.com</a>.
         </p>
         <p style="color: #334155; font-size: 14px; line-height: 1.7; margin-bottom: 16px;">
-          Upon receiving your signed copy, our onboarding team will reach out with details regarding your joining instructions, workspace setup, and induction timeline.
-        </p>
-        <p style="color: #0f172a; font-size: 14px; line-height: 1.7; margin-bottom: 4px; font-weight: 600;">
-          Welcome to the creative team! We look forward to building amazing experiences together.
+          Upon receipt of the signed copy, the HR operations team will share onboarding instructions, joining formalities, and induction schedule details.
         </p>
       `;
       break;
@@ -2304,13 +2303,10 @@ function getEmailBody(document_type, employee, jobRole) {
     case 'Confirmation Letter':
       body = `
         <p style="color: #334155; font-size: 14px; line-height: 1.7; margin-bottom: 16px;">
-          Congratulations! We are pleased to formally confirm your employment as <strong>${jobRole}</strong> at <strong>The Corvus Studio</strong>, following the successful completion of your probation period.
+          This email confirms the successful completion of your probation period. Please find your official <strong>Confirmation Letter</strong> for the position of <strong>${jobRole}</strong> at <strong>The Corvus Studio</strong> attached.
         </p>
         <p style="color: #334155; font-size: 14px; line-height: 1.7; margin-bottom: 16px;">
-          Please find your official <strong>Confirmation Letter</strong> attached to this email. We appreciate your dedication, creativity, and contributions during this initial phase and look forward to your continued growth with us.
-        </p>
-        <p style="color: #334155; font-size: 14px; line-height: 1.7; margin-bottom: 4px;">
-          Thank you for being an integral part of our studio.
+          We appreciate your dedication and contribution during your probation period and look forward to your continued association with the company.
         </p>
       `;
       break;
@@ -2319,10 +2315,10 @@ function getEmailBody(document_type, employee, jobRole) {
     case 'Employment Verification Certificate':
       body = `
         <p style="color: #334155; font-size: 14px; line-height: 1.7; margin-bottom: 16px;">
-          As requested, we have issued your official <strong>${document_type}</strong> verifying your current employment status, designation as <strong>${jobRole}</strong>, and compensation details at The Corvus Studio.
+          As requested, we have issued your official <strong>${document_type}</strong> confirming your current employment status, designation as <strong>${jobRole}</strong>, and compensation details at The Corvus Studio.
         </p>
         <p style="color: #334155; font-size: 14px; line-height: 1.7; margin-bottom: 16px;">
-          Please find the verified document attached to this email. This certificate is provided for verification, financial, or other official requirements as requested by you.
+          Please find the verified document attached to this email. This certificate is provided for your reference or onward submission to the requesting authority.
         </p>
       `;
       break;
@@ -2334,10 +2330,7 @@ function getEmailBody(document_type, employee, jobRole) {
           Please find attached your official <strong>${document_type}</strong> from The Corvus Studio, confirming your service tenure and formal exit parameters.
         </p>
         <p style="color: #334155; font-size: 14px; line-height: 1.7; margin-bottom: 16px;">
-          We would like to take this opportunity to thank you for your commitment, contributions, and the creative work you performed during your association with the studio. 
-        </p>
-        <p style="color: #0f172a; font-size: 14px; line-height: 1.7; margin-bottom: 4px; font-weight: 600;">
-          We wish you the absolute best in all your future professional and personal endeavors.
+          We acknowledge your contributions during your tenure and wish you success in your future professional endeavors.
         </p>
       `;
       break;
@@ -2346,13 +2339,10 @@ function getEmailBody(document_type, employee, jobRole) {
     case 'Promotion Letter':
       body = `
         <p style="color: #334155; font-size: 14px; line-height: 1.7; margin-bottom: 16px;">
-          Congratulations! We are delighted to share your official <strong>${document_type}</strong> in recognition of your outstanding performance, dedication, and growth at The Corvus Studio.
+          Please find attached your official <strong>${document_type}</strong> in recognition of your performance and growth at The Corvus Studio.
         </p>
         <p style="color: #334155; font-size: 14px; line-height: 1.7; margin-bottom: 16px;">
-          Please find the letter detailing your revised compensation structure and/or designation attached. This promotion/increment represents our appreciation for your exceptional efforts and value to the studio.
-        </p>
-        <p style="color: #0f172a; font-size: 14px; line-height: 1.7; margin-bottom: 4px; font-weight: 600;">
-          Keep up the fantastic work!
+          This letter details your revised compensation structure and/or designation as <strong>${jobRole}</strong>, effective from the date specified in the document.
         </p>
       `;
       break;
@@ -2360,13 +2350,10 @@ function getEmailBody(document_type, employee, jobRole) {
     case 'Resignation Acceptance Letter':
       body = `
         <p style="color: #334155; font-size: 14px; line-height: 1.7; margin-bottom: 16px;">
-          This email confirms the formal acceptance of your resignation from your position as <strong>${jobRole}</strong>. 
+          This email confirms the formal acceptance of your resignation from your position as <strong>${jobRole}</strong>.
         </p>
         <p style="color: #334155; font-size: 14px; line-height: 1.7; margin-bottom: 16px;">
-          Please find the attached <strong>Resignation Acceptance Letter</strong> which outlines your exit transition period, last working day parameters, and hand-over instructions.
-        </p>
-        <p style="color: #334155; font-size: 14px; line-height: 1.7; margin-bottom: 4px;">
-          We appreciate your support in making the transition process smooth.
+          Please find the attached <strong>Resignation Acceptance Letter</strong> which outlines your transition period, last working day parameters, and handover requirements.
         </p>
       `;
       break;
@@ -2388,7 +2375,7 @@ function getEmailBody(document_type, employee, jobRole) {
           As requested, we have issued your official <strong>No Objection Certificate (NOC)</strong> from The Corvus Studio.
         </p>
         <p style="color: #334155; font-size: 14px; line-height: 1.7; margin-bottom: 16px;">
-          Please find the document attached to this email, confirming that the studio has no objection to the requested activity/program as per your request details.
+          Please find the document attached to this email, confirming that the company has no objection to the requested activity as per our records.
         </p>
       `;
       break;
@@ -2396,13 +2383,10 @@ function getEmailBody(document_type, employee, jobRole) {
     case 'Appreciation Letter':
       body = `
         <p style="color: #334155; font-size: 14px; line-height: 1.7; margin-bottom: 16px;">
-          We are pleased to share this official <strong>Letter of Appreciation</strong> with you in recognition of your exceptional work, creativity, and dedication.
+          Please find attached the official <strong>Letter of Appreciation</strong> issued in recognition of your recent contributions at The Corvus Studio.
         </p>
         <p style="color: #334155; font-size: 14px; line-height: 1.7; margin-bottom: 16px;">
-          Please find the letter attached to this email. Your contribution to our projects and team culture is highly valued by the studio leadership.
-        </p>
-        <p style="color: #0f172a; font-size: 14px; line-height: 1.7; margin-bottom: 4px; font-weight: 600;">
-          Thank you for going above and beyond!
+          The management appreciates your commitment and effort towards the project objectives.
         </p>
       `;
       break;
@@ -2411,13 +2395,13 @@ function getEmailBody(document_type, employee, jobRole) {
     case 'Show Cause Notice':
       body = `
         <p style="color: #e11d48; font-size: 14px; line-height: 1.7; margin-bottom: 16px; font-weight: 600;">
-          IMPORTANT: Disciplinary Operations Notice
+          Formal Disciplinary Notice
         </p>
         <p style="color: #334155; font-size: 14px; line-height: 1.7; margin-bottom: 16px;">
           Please find attached your official <strong>${document_type}</strong> from The Corvus Studio HR Operations.
         </p>
         <p style="color: #334155; font-size: 14px; line-height: 1.7; margin-bottom: 16px;">
-          You are instructed to review this document carefully. If a response, explanation, or corrective action plan is requested, please submit it as detailed within the document within the specified timeframe.
+          You are instructed to review this document. If a response, explanation, or corrective action plan is requested, please submit it as detailed within the document within the specified timeframe.
         </p>
       `;
       break;
@@ -2428,7 +2412,7 @@ function getEmailBody(document_type, employee, jobRole) {
           Please find attached your official <strong>Probation Extension Letter</strong> from The Corvus Studio.
         </p>
         <p style="color: #334155; font-size: 14px; line-height: 1.7; margin-bottom: 16px;">
-          This letter details the extension of your evaluation period to provide further opportunity to align your deliverables and performance parameters with the studio's expectations.
+          This letter details the extension of your evaluation period to provide further opportunity to align your performance with the company's expectations.
         </p>
       `;
       break;
