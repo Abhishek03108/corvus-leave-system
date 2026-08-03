@@ -2162,7 +2162,7 @@ app.on('POST', ['/api/v1/admin/offer-letters/generate', '/admin/offer-letters/ge
       if (existingDraft && !body.force_new) {
         documentId = existingDraft.document_id;
       } else {
-        documentId = await generateDocumentId(c.env.DB);
+        documentId = await generateDocumentId(c.env.DB, body.documentType || options?.documentType, employee.employee_code || employee.employeeCode);
         // Store in offer_letters table to guarantee Document ID uniqueness
         const createdBy = jwtUser?.userId || jwtUser?.id || null;
         await c.env.DB.prepare(
@@ -2171,7 +2171,7 @@ app.on('POST', ['/api/v1/admin/offer-letters/generate', '/admin/offer-letters/ge
       }
     } else {
       // For new candidates (not in users table yet), we generate a new ID and insert employee_id as 0
-      documentId = await generateDocumentId(c.env.DB);
+      documentId = await generateDocumentId(c.env.DB, body.documentType || options?.documentType, options?.candidateCode || null);
       const createdBy = jwtUser?.userId || jwtUser?.id || null;
       await c.env.DB.prepare(
         `INSERT INTO offer_letters (document_id, employee_id, employment_type, created_by) VALUES (?, 0, ?, ?)`

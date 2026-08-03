@@ -13,13 +13,46 @@ const LOGO_MARK = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAYoAAAGkCAYAAAA
 const SIGNATURE = 'data:image/png;base64,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'; // C-mark only (watermark)
 
 // â”€â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-export async function generateDocumentId(db) {
+// Map document type → short prefix for the reference ID
+const DOC_TYPE_PREFIX = {
+  'Offer Letter':                        'OL',
+  'Salary Certificate':                  'SC',
+  'Experience Letter':                   'EL',
+  'Confirmation Letter':                 'CL',
+  'Relieving Letter':                    'RL',
+  'Increment Letter':                    'IL',
+  'Promotion Letter':                    'PLT',
+  'No Objection Certificate (NOC)':      'NOC',
+  'Appreciation Letter':                 'APL',
+  'Warning Letter':                      'WL',
+  'Show Cause Notice':                   'SCN',
+  'Employment Verification Certificate': 'EVC',
+  'Resignation Acceptance Letter':       'RA',
+  'Full & Final Settlement Letter':      'FFS',
+  'Probation Extension Letter':          'PE',
+};
+
+/**
+ * generateDocumentId(db, documentType?, employeeCode?)
+ * Returns a reference like SC/CS074/001
+ *   prefix      – derived from documentType (falls back to 'CS')
+ *   employeeCode – the employee's CS-code (e.g. 'CS074'); if absent, omitted
+ *   serial      – 3-digit counter scoped to this document type prefix
+ */
+export async function generateDocumentId(db, documentType, employeeCode) {
+  const prefix = DOC_TYPE_PREFIX[documentType] || 'CS';
+
+  // Count existing records of this prefix to derive the next serial
   const r = await db.prepare(
-    `SELECT document_id FROM offer_letters WHERE document_id LIKE 'CS%' ORDER BY id DESC LIMIT 1`
-  ).first();
-  let n = 1;
-  if (r?.document_id) { const m = r.document_id.match(/CS(\d+)/i); if (m) n = parseInt(m[1]) + 1; }
-  return `CS${String(n).padStart(3, '0')}`;
+    `SELECT COUNT(*) as cnt FROM offer_letters WHERE document_id LIKE ?`
+  ).bind(prefix + '/%').first();
+  const serial = String((r?.cnt || 0) + 1).padStart(3, '0');
+
+  // Build the reference ID
+  if (employeeCode && employeeCode.trim()) {
+    return `${prefix}/${employeeCode.trim()}/${serial}`;
+  }
+  return `${prefix}/${serial}`;
 }
 
 export function detectEmploymentType(str) {
