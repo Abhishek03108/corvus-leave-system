@@ -2207,6 +2207,55 @@ app.on('POST', ['/api/v1/admin/offer-letters/generate', '/admin/offer-letters/ge
   }
 });
 
+async function generateAiEmailBody(c, document_type, employee, jobRole) {
+  if (!c.env.AI) {
+    console.log('AI binding not found. Falling back to static templates.');
+    return null;
+  }
+
+  try {
+    const prompt = `Write a professional, context-appropriate email body paragraphs for an employee receiving a "${document_type}" from their company "The Corvus Studio".
+The employee is "${employee.full_name}" who works as a "${jobRole}".
+The email should explain the purpose of the attached "${document_type}" and detail any next steps or requirements in a helpful, professional tone.
+Requirements:
+1. Do NOT include a subject line.
+2. Do NOT write the greeting (e.g., "Dear ...") or the sign-off (e.g., "Best Regards...").
+3. Return only the core message body formatted in clean HTML paragraphs (<p> or <ul>/<li>).
+4. Make the content highly relevant to the specific context of a "${document_type}" for a "${jobRole}".`;
+
+    const result = await c.env.AI.run('@cf/meta/llama-3.1-8b-instruct', {
+      messages: [
+        {
+          role: 'system',
+          content: 'You are a professional HR assistant. You generate clean, well-formatted email body HTML paragraphs. You do not return any conversational chatter or greetings, only the requested HTML tags.'
+        },
+        {
+          role: 'user',
+          content: prompt
+        }
+      ]
+    });
+
+    if (result && result.response) {
+      // Remove any trailing/leading markdown code block indicators if returned by AI
+      let cleanText = result.response.trim();
+      if (cleanText.startsWith('```html')) {
+        cleanText = cleanText.substring(7);
+      } else if (cleanText.startsWith('```')) {
+        cleanText = cleanText.substring(3);
+      }
+      if (cleanText.endsWith('```')) {
+        cleanText = cleanText.substring(0, cleanText.length - 3);
+      }
+      return cleanText.trim();
+    }
+  } catch (err) {
+    console.error('Failed to generate AI email body:', err);
+  }
+
+  return null;
+}
+
 function getEmailBody(document_type, employee, jobRole) {
   const containerStart = `
     <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f8fafc; padding: 24px;">
@@ -2497,7 +2546,36 @@ app.on('POST', ['/api/v1/admin/offer-letters/send-email', '/admin/offer-letters/
   }
 
   // Dynamic Email Body Mapping
-  const emailHtml = getEmailBody(document_type, employee, jobRole);
+  const fallbackHtml = getEmailBody(document_type, employee, jobRole);
+  let emailHtml = fallbackHtml;
+
+  const aiBody = await generateAiEmailBody(c, document_type, employee, jobRole);
+  if (aiBody) {
+    emailHtml = `
+      <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f8fafc; padding: 24px;">
+        <div style="background-color: #ffffff; border-radius: 12px; padding: 32px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
+          <h2 style="color: #0f172a; margin-top: 0; font-size: 18px; letter-spacing: 0.5px; font-weight: 800;">THE CORVUS STUDIO</h2>
+          <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 16px 0 24px;" />
+          <p style="color: #1e293b; font-size: 14px; margin-bottom: 16px; font-weight: 600;">Dear ${employee.full_name},</p>
+          
+          <div style="color: #334155; font-size: 14px; line-height: 1.7; margin-bottom: 16px;">
+            ${aiBody}
+          </div>
+          
+          <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 24px 0 16px;" />
+          <p style="color: #475569; font-size: 12px; line-height: 1.6; margin-bottom: 20px;">
+            If you have any questions or require further details, please reach out to the HR Operations desk at <a href="mailto:careers@thecorvusstudio.com" style="color: #0ea5e9; text-decoration: none; font-weight: 600;">careers@thecorvusstudio.com</a>.
+          </p>
+          <p style="color: #334155; font-size: 14px; margin-top: 24px; line-height: 1.5;">
+            Best Regards,<br/>
+            <strong>HR Operations Team</strong><br/>
+            <span style="color: #64748b; font-size: 12px;">The Corvus Studio</span><br/>
+            <a href="mailto:careers@thecorvusstudio.com" style="color: #0ea5e9; text-decoration: none; font-size: 12px;">careers@thecorvusstudio.com</a>
+          </p>
+        </div>
+      </div>
+    `;
+  }
 
   const attachments = pdf_base64 ? [
     {
