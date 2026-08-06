@@ -124,7 +124,7 @@ async function sendOtpEmail(apiKey, to, otp) {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      from: 'Corvus Studio <noreply@thecorvusstudio.com>',
+      from: 'Corvus Studio <noreply@managements.thecorvusstudio.com>',
       to,
       subject: 'Your OTP for Corvus Studio Managements',
       html: `
@@ -155,7 +155,7 @@ async function sendOtpEmail(apiKey, to, otp) {
 async function sendNotificationEmail(apiKey, { to, cc, subject, html, attachments }) {
   try {
     const payload = {
-      from: 'Corvus Studio <noreply@thecorvusstudio.com>',
+      from: 'Corvus Studio <noreply@managements.thecorvusstudio.com>',
       to,
       cc,
       subject,
@@ -235,7 +235,7 @@ async function sendWelcomeEmail(apiKey, to, fullName) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: 'Corvus Studio <noreply@thecorvusstudio.com>',
+        from: 'Corvus Studio <noreply@managements.thecorvusstudio.com>',
         to,
         subject: 'Welcome to Corvus Studio — Your Managements Portal is Ready',
         html,
