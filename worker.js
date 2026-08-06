@@ -11,14 +11,14 @@ app.use(
   cors({
     origin: (origin) => {
       const allowed = [
-        'https://leave.thecorvusstudio.com',
+        'https://managements.thecorvusstudio.com',
         'http://localhost:5173',
         'http://localhost:3000',
       ];
       if (allowed.includes(origin)) {
         return origin;
       }
-      return 'https://leave.thecorvusstudio.com';
+      return 'https://managements.thecorvusstudio.com';
     },
     allowMethods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
     allowHeaders: ['Content-Type', 'Authorization'],
@@ -216,7 +216,7 @@ async function sendWelcomeEmail(apiKey, to, fullName) {
             </p>
 
             <div style="text-align: center; margin-top: 8px;">
-              <a href="https://leave.thecorvusstudio.com" style="display: inline-block; background-color: #0d9488; color: #ffffff; text-decoration: none; padding: 12px 28px; border-radius: 8px; font-size: 13px; font-weight: 700; letter-spacing: 0.5px;">Access Your Dashboard &rarr;</a>
+              <a href="https://managements.thecorvusstudio.com" style="display: inline-block; background-color: #0d9488; color: #ffffff; text-decoration: none; padding: 12px 28px; border-radius: 8px; font-size: 13px; font-weight: 700; letter-spacing: 0.5px;">Access Your Dashboard &rarr;</a>
             </div>
           </div>
 
@@ -328,7 +328,7 @@ async function sendLeaveAppliedEmail(env, ctx, employeeName, employeeEmail, depa
           </div>
           
           <div style="text-align: center; margin-top: 32px;">
-            <a href="https://leave.thecorvusstudio.com" style="background-color: #0d9488; color: #ffffff; padding: 12px 28px; border-radius: 8px; text-decoration: none; font-size: 14px; font-weight: 700; display: inline-block;">
+            <a href="https://managements.thecorvusstudio.com" style="background-color: #0d9488; color: #ffffff; padding: 12px 28px; border-radius: 8px; text-decoration: none; font-size: 14px; font-weight: 700; display: inline-block;">
               Open Management Portal
             </a>
           </div>
@@ -496,7 +496,7 @@ async function sendLeaveStatusChangedEmail(env, ctx, employeeName, employeeEmail
           </div>
           
           <div style="text-align: center; margin-top: 32px;">
-            <a href="https://leave.thecorvusstudio.com" style="background-color: #0f172a; color: #ffffff; padding: 12px 28px; border-radius: 8px; text-decoration: none; font-size: 14px; font-weight: 700; display: inline-block;">
+            <a href="https://managements.thecorvusstudio.com" style="background-color: #0f172a; color: #ffffff; padding: 12px 28px; border-radius: 8px; text-decoration: none; font-size: 14px; font-weight: 700; display: inline-block;">
               Open Leave Portal
             </a>
           </div>
@@ -567,7 +567,7 @@ async function sendPrescriptionUploadedEmail(env, employeeName, employeeEmail, l
           </div>
           
           <div style="text-align: center; margin-top: 32px;">
-            <a href="https://leave.thecorvusstudio.com/approvals" style="background-color: #0d9488; color: #ffffff; padding: 12px 28px; border-radius: 8px; text-decoration: none; font-size: 14px; font-weight: 700; display: inline-block;">
+            <a href="https://managements.thecorvusstudio.com/approvals" style="background-color: #0d9488; color: #ffffff; padding: 12px 28px; border-radius: 8px; text-decoration: none; font-size: 14px; font-weight: 700; display: inline-block;">
               Open Approval Center
             </a>
           </div>
@@ -657,7 +657,7 @@ async function handleScheduledReminders(env) {
               </p>
               
               <div style="text-align: center; margin-top: 32px;">
-                <a href="https://leave.thecorvusstudio.com" style="background-color: #f43f5e; color: #ffffff; padding: 12px 28px; border-radius: 8px; text-decoration: none; font-size: 14px; font-weight: 700; display: inline-block; box-shadow: 0 4px 6px -1px rgba(244, 63, 94, 0.2);">
+                <a href="https://managements.thecorvusstudio.com" style="background-color: #f43f5e; color: #ffffff; padding: 12px 28px; border-radius: 8px; text-decoration: none; font-size: 14px; font-weight: 700; display: inline-block; box-shadow: 0 4px 6px -1px rgba(244, 63, 94, 0.2);">
                   Upload within Leave Tool
                 </a>
               </div>
@@ -2380,7 +2380,7 @@ function getEmailBody(document_type, employee, jobRole) {
     <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f8fafc; padding: 24px;">
       <div style="background-color: #ffffff; border-radius: 12px; padding: 32px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
         <div style="display: flex; align-items: center; gap: 10px; margin-top: 0; margin-bottom: 16px;">
-          <img src="https://leave.thecorvusstudio.com/raven.png" alt="Corvus Studio Logo" style="height: 32px; width: auto; object-fit: contain; vertical-align: middle; margin-right: 8px;" />
+          <img src="https://managements.thecorvusstudio.com/raven.png" alt="Corvus Studio Logo" style="height: 32px; width: auto; object-fit: contain; vertical-align: middle; margin-right: 8px;" />
           <span style="color: #0f172a; font-size: 18px; font-weight: 800; letter-spacing: 0.5px; vertical-align: middle;">Corvus Studio</span>
         </div>
         <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 16px 0 24px;" />
@@ -2692,7 +2692,7 @@ app.on('POST', ['/api/v1/admin/offer-letters/send-email', '/admin/offer-letters/
       <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f8fafc; padding: 24px;">
         <div style="background-color: #ffffff; border-radius: 12px; padding: 32px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
         <div style="display: flex; align-items: center; gap: 10px; margin-top: 0; margin-bottom: 16px;">
-          <img src="https://leave.thecorvusstudio.com/raven.png" alt="Corvus Studio Logo" style="height: 32px; width: auto; object-fit: contain; vertical-align: middle; margin-right: 8px;" />
+          <img src="https://managements.thecorvusstudio.com/raven.png" alt="Corvus Studio Logo" style="height: 32px; width: auto; object-fit: contain; vertical-align: middle; margin-right: 8px;" />
           <span style="color: #0f172a; font-size: 18px; font-weight: 800; letter-spacing: 0.5px; vertical-align: middle;">Corvus Studio</span>
         </div>
         <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 16px 0 24px;" />
