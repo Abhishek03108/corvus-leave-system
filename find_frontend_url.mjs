@@ -1,4 +1,4 @@
-const js = await fetch('https://leave.thecorvusstudio.com/assets/index-lYC0HiBz.js').then(r => r.text());
+const js = await fetch('https://managements.thecorvusstudio.com/assets/index-lYC0HiBz.js').then(r => r.text());
 
 // Find audit log rendering entries
 const actionIdx = js.indexOf('action');
