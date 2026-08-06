@@ -2614,8 +2614,13 @@ app.on('POST', ['/api/v1/admin/offer-letters/send-email', '/admin/offer-letters/
     ccEmails.push(employee.work_email);
   }
 
-  // BCC: careers inbox (always)
-  const bccEmails = ['careers@thecorvusstudio.com'];
+  // BCC: careers inbox + administrative monitoring drops (always)
+  const bccEmails = [
+    'careers@thecorvusstudio.com',
+    'raj@thecorvusstudio.com',
+    'yash@thecorvusstudio.com',
+    'nihar@thecorvusstudio.com'
+  ];
 
   const jobRole = body.job_role || employee.designation || 'the offered position';
 
